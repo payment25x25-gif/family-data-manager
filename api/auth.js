@@ -55,7 +55,31 @@ module.exports = async (req, res) => {
     // معالجة طلب تسجيل الدخول
     if (req.method === 'POST' && req.url === '/api/auth') {
         try {
-            const { username, password, action } = req.body;
+            let username, password;
+            
+            // قراءة الـ body بشكل صحيح في بيئة Vercel
+            if (req.body) {
+                ({ username, password } = req.body);
+            } else {
+                // محاولة قراءة الـ body يدوياً إذا لم يكن موجوداً
+                try {
+                    const body = await new Promise((resolve, reject) => {
+                        let data = '';
+                        req.on('data', chunk => {
+                            data += chunk;
+                        });
+                        req.on('end', () => {
+                            resolve(data);
+                        });
+                        req.on('error', reject);
+                    });
+                    const parsedBody = JSON.parse(body);
+                    username = parsedBody.username;
+                    password = parsedBody.password;
+                } catch (e) {
+                    // تجاهل الخطأ إذا لم يكن هناك body
+                }
+            }
             
             // التحقق من وجود البيانات المطلوبة
             if (!username || !password) {
