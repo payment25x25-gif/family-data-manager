@@ -59,43 +59,12 @@ function goHome() {
     showPage('homePage');
 }
 
-// ============================================
-// دالة مساعدة لتحديث الـ Body Class
-// ============================================
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-    const page = document.getElementById(pageId);
-    if (page) {
-        page.classList.add('active');
-        
-        // تحديث Body Class للتصميم الخاص
-        const body = document.getElementById('mainBody');
-        const bodyClass = page.getAttribute('data-body-class');
-        
-        // إزالة جميع الكلاسات الخاصة بالصفحات الأخرى
-        body.className = '';
-        
-        if (bodyClass) {
-            body.classList.add(bodyClass);
-        }
-    }
-}
-
 function showFamily(familyName, isAdminMode = false) {
-    // إخفاء جميع الصفحات
-    // showPage('familyPage'); // تم نقلها إلى نهاية الدالة
-
     if (familyName === 'آل مزهر') {
-        // عرض صفحة آل مزهر الجديدة
         showPage('familyPageMazhar');
-        // هنا يجب أن نستدعي دالة تحميل البيانات الخاصة بآل مزهر
-        // mazhar_loadData(); // تم نقل الاستدعاء إلى init() لضمان تحميل البيانات عند بدء التشغيل
-
-        // تطبيق الصلاحيات
-        mazhar_applyAdminControls();
+        mazhar_init(isAdminMode);
         return;
     }
-    
     // عرض بيانات العائلة
     const data = familiesData[familyName];
     
@@ -136,25 +105,6 @@ function showFamily(familyName, isAdminMode = false) {
     
     // عرض الصفحة
     showPage('familyPage');
-}
-
-function showPage(pageId) {
-    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
-    const page = document.getElementById(pageId);
-    if (page) {
-        page.classList.add('active');
-        
-        // تحديث Body Class للتصميم الخاص
-        const body = document.getElementById('mainBody');
-        const bodyClass = page.getAttribute('data-body-class');
-        
-        // إزالة جميع الكلاسات الخاصة بالصفحات الأخرى
-        body.className = '';
-        
-        if (bodyClass) {
-            body.classList.add(bodyClass);
-        }
-    }
 }
 
 // ============================================
@@ -213,6 +163,576 @@ function createFamilyTable(data, isEditable = false) {
 }
 
 // دوال وهمية للتعديل والحذف
+
+// ============================================
+// دوال صفحة آل مزهر (Google Apps Script)
+// ============================================
+
+// متغيرات عامة لصفحة آل مزهر
+let mazharTableData = [];
+let mazharYears = [];
+let mazharEditingCell = { row: null, col: null };
+let mazharEditingName = { row: null };
+let mazharEditingYear = { col: null };
+
+const MAZHAR_SHEET_ID = "1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc";
+const MAZHAR_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYrKD_o_QNgeaM36P78HbBDfPtqyAD-UX066lcKaVIP6paNvjhYDg/exec";
+
+function mazhar_init(isAdminMode) {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const isEditable = isAdminMode && isLoggedIn;
+    
+    // إظهار/إخفاء أدوات المشرف
+    document.getElementById('mazharAdminControls').style.display = isEditable ? 'flex' : 'none';
+    document.getElementById('mazharAddRowContainer').style.display = isEditable ? 'block' : 'none';
+    
+    // حفظ حالة التعديل
+    localStorage.setItem('mazharIsEditable', isEditable ? 'true' : 'false');
+    
+    mazhar_loadData();
+}
+
+// ============================================
+// تحميل البيانات من Google Sheet
+// ============================================
+function mazhar_loadData() {
+    mazhar_showNotification('جاري تحميل البيانات...', 'info');
+    
+    fetch(MAZHAR_WEB_APP_URL + '?action=getData')
+        .then(response => response.json())
+        .then(data => {
+            mazharTableData = data.data || [];
+            mazharYears = data.years || [];
+            mazhar_renderTable();
+            mazhar_showNotification('تم تحميل البيانات بنجاح ✓', 'success');
+        })
+        .catch(error => {
+            console.error('خطأ:', error);
+            mazhar_showNotification('خطأ في تحميل البيانات. تأكد من رابط Google Apps Script.', 'error');
+        });
+}
+
+// ============================================
+// رسم الجدول
+// ============================================
+function mazhar_renderTable() {
+    const yearsRow = document.getElementById('mazharYearsRow');
+    const tableBody = document.getElementById('mazharTableBody');
+    const isEditable = localStorage.getItem('mazharIsEditable') === 'true';
+    
+    // مسح الصفوف السابقة
+    yearsRow.innerHTML = '<th colspan="2"></th>';
+    tableBody.innerHTML = '';
+    
+    // إضافة السنوات في الصف الأول
+    mazharYears.forEach((year, index) => {
+        const th = document.createElement('th');
+        th.className = 'col-year';
+        th.textContent = year;
+        
+        if (isEditable) {
+            th.onclick = () => mazhar_openEditYearHeaderModal(index, year);
+            th.style.cursor = 'pointer';
+            th.title = 'اضغط للتعديل أو الحذف';
+        }
+        
+        yearsRow.appendChild(th);
+    });
+    
+    // إضافة صفوف البيانات
+    mazharTableData.forEach((row, rowIndex) => {
+        const tr = document.createElement('tr');
+        
+        // رقم الصف
+        const tdNumber = document.createElement('td');
+        tdNumber.className = 'col-number';
+        tdNumber.textContent = rowIndex + 1;
+        tr.appendChild(tdNumber);
+        
+        // اسم الشخص
+        const tdName = document.createElement('td');
+        tdName.className = 'col-name';
+        tdName.textContent = row[0] || '';
+        
+        if (isEditable) {
+            tdName.onclick = () => mazhar_openEditNameModal(rowIndex, row[0]);
+            tdName.style.cursor = 'pointer';
+            tdName.title = 'اضغط للتعديل أو الحذف';
+        }
+        
+        tr.appendChild(tdName);
+        
+        // خلايا البيانات
+        for (let colIndex = 1; colIndex <= mazharYears.length; colIndex++) {
+            const td = document.createElement('td');
+            const value = row[colIndex] || '-';
+            
+            const cell = document.createElement('div');
+            cell.className = 'data-cell ' + mazhar_getCellClass(value);
+            cell.textContent = value;
+            
+            if (isEditable) {
+                cell.onclick = () => mazhar_openEditCellModal(rowIndex, colIndex - 1, row[0], mazharYears[colIndex - 1], value);
+            } else {
+                cell.style.cursor = 'default';
+            }
+            
+            td.appendChild(cell);
+            tr.appendChild(td);
+        }
+        
+        tableBody.appendChild(tr);
+    });
+}
+
+// ============================================
+// تحديد فئة الخلية بناءً على القيمة
+// ============================================
+function mazhar_getCellClass(value) {
+    if (value === 'مشارك') return 'participant';
+    if (value === 'X') return 'absent';
+    if (value === '-') return 'empty';
+    return 'custom';
+}
+
+// ============================================
+// فتح مودال تعديل الخانة
+// ============================================
+function mazhar_openEditCellModal(row, col, personName, year, currentValue) {
+    if (localStorage.getItem('mazharIsEditable') !== 'true') return;
+    
+    mazharEditingCell = { row, col };
+    document.getElementById('mazharEditPersonName').textContent = personName;
+    document.getElementById('mazharEditYearValue').textContent = year;
+    document.getElementById('mazharEditCellValue').value = currentValue;
+    
+    // إعادة تعيين الأزرار
+    document.querySelectorAll('#mazharEditCellModal .option-btn').forEach(btn => {
+        btn.classList.remove('active');
+    });
+    
+    document.getElementById('mazharEditCellModal').style.display = 'flex';
+}
+
+// ============================================
+// إغلاق مودال تعديل الخانة
+// ============================================
+function mazhar_closeEditCellModal() {
+    document.getElementById('mazharEditCellModal').style.display = 'none';
+    document.getElementById('mazharEditCellValue').value = '';
+}
+
+// ============================================
+// تعيين قيمة الخانة من الأزرار
+// ============================================
+function mazhar_setEditValue(value) {
+    document.getElementById('mazharEditCellValue').value = value;
+    
+    // تحديث الأزرار النشطة
+    document.querySelectorAll('#mazharEditCellModal .option-btn').forEach(btn => {
+        btn.classList.remove('active');
+        if (btn.textContent.includes(value)) {
+            btn.classList.add('active');
+        }
+    });
+}
+
+// ============================================
+// حفظ تعديل الخانة
+// ============================================
+function mazhar_saveEditCell() {
+    const value = document.getElementById('mazharEditCellValue').value.trim();
+    
+    if (!value) {
+        mazhar_showNotification('الرجاء إدخال قيمة', 'warning');
+        return;
+    }
+    
+    mazharTableData[mazharEditingCell.row][mazharEditingCell.col + 1] = value;
+    
+    // حفظ في Google Sheet
+    mazhar_updateCell(mazharEditingCell.row, mazharEditingCell.col + 1, value);
+    
+    mazhar_closeEditCellModal();
+    mazhar_renderTable();
+    mazhar_showNotification('تم تحديث البيانات ✓', 'success');
+}
+
+// ============================================
+// فتح مودال تعديل الاسم
+// ============================================
+function mazhar_openEditNameModal(row, currentName) {
+    if (localStorage.getItem('mazharIsEditable') !== 'true') return;
+    
+    mazharEditingName = { row };
+    document.getElementById('mazharEditNameValue').value = currentName;
+    document.getElementById('mazharEditNameModal').style.display = 'flex';
+    document.getElementById('mazharEditNameValue').focus();
+}
+
+// ============================================
+// إغلاق مودال تعديل الاسم
+// ============================================
+function mazhar_closeEditNameModal() {
+    document.getElementById('mazharEditNameModal').style.display = 'none';
+    document.getElementById('mazharEditNameValue').value = '';
+}
+
+// ============================================
+// حفظ تعديل الاسم
+// ============================================
+function mazhar_saveEditName() {
+    const newName = document.getElementById('mazharEditNameValue').value.trim();
+    
+    if (!newName) {
+        mazhar_showNotification('الرجاء إدخال اسم', 'warning');
+        return;
+    }
+    
+    mazharTableData[mazharEditingName.row][0] = newName;
+    mazhar_updateCell(mazharEditingName.row, 0, newName);
+    
+    mazhar_closeEditNameModal();
+    mazhar_renderTable();
+    mazhar_showNotification('تم تحديث الاسم ✓', 'success');
+}
+
+// ============================================
+// حذف صف الشخص
+// ============================================
+function mazhar_deletePersonRow() {
+    if (confirm('هل أنت متأكد من حذف هذا الشخص؟')) {
+        mazharTableData.splice(mazharEditingName.row, 1);
+        mazhar_deletePerson(mazharEditingName.row);
+        mazhar_closeEditNameModal();
+        mazhar_renderTable();
+        mazhar_showNotification('تم حذف الشخص ✓', 'success');
+    }
+}
+
+// ============================================
+// فتح مودال تعديل السنة
+// ============================================
+function mazhar_openEditYearHeaderModal(col, currentYear) {
+    if (localStorage.getItem('mazharIsEditable') !== 'true') return;
+    
+    mazharEditingYear = { col };
+    document.getElementById('mazharEditYearHeaderValue').value = currentYear;
+    document.getElementById('mazharEditYearHeaderModal').style.display = 'flex';
+    document.getElementById('mazharEditYearHeaderValue').focus();
+}
+
+// ============================================
+// إغلاق مودال تعديل السنة
+// ============================================
+function mazhar_closeEditYearHeaderModal() {
+    document.getElementById('mazharEditYearHeaderModal').style.display = 'none';
+    document.getElementById('mazharEditYearHeaderValue').value = '';
+}
+
+// ============================================
+// حفظ تعديل السنة
+// ============================================
+function mazhar_saveEditYearHeader() {
+    const newYear = document.getElementById('mazharEditYearHeaderValue').value.trim();
+    
+    if (!newYear) {
+        mazhar_showNotification('الرجاء إدخال السنة', 'warning');
+        return;
+    }
+    
+    mazharYears[mazharEditingYear.col] = newYear;
+    mazhar_updateYear(mazharEditingYear.col, newYear);
+    
+    mazhar_closeEditYearHeaderModal();
+    mazhar_renderTable();
+    mazhar_showNotification('تم تحديث السنة ✓', 'success');
+}
+
+// ============================================
+// حذف عمود السنة
+// ============================================
+function mazhar_deleteYearColumn() {
+    if (confirm('هل أنت متأكد من حذف هذه السنة؟')) {
+        mazharYears.splice(mazharEditingYear.col, 1);
+        mazharTableData.forEach(row => {
+            row.splice(mazharEditingYear.col + 1, 1);
+        });
+        mazhar_deleteYear(mazharEditingYear.col);
+        mazhar_closeEditYearHeaderModal();
+        mazhar_renderTable();
+        mazhar_showNotification('تم حذف السنة ✓', 'success');
+    }
+}
+
+// ============================================
+// فتح مودال إضافة شخص
+// ============================================
+function mazhar_openAddPersonModal() {
+    if (localStorage.getItem('mazharIsEditable') !== 'true') return;
+    
+    document.getElementById('mazharPersonName').value = '';
+    document.getElementById('mazharAddPersonModal').style.display = 'flex';
+    document.getElementById('mazharPersonName').focus();
+}
+
+// ============================================
+// إغلاق مودال إضافة شخص
+// ============================================
+function mazhar_closeAddPersonModal() {
+    document.getElementById('mazharAddPersonModal').style.display = 'none';
+    document.getElementById('mazharPersonName').value = '';
+}
+
+// ============================================
+// إضافة شخص جديد
+// ============================================
+function mazhar_addNewPerson() {
+    const name = document.getElementById('mazharPersonName').value.trim();
+    
+    if (!name) {
+        mazhar_showNotification('الرجاء إدخال اسم الشخص', 'warning');
+        return;
+    }
+    
+    // إنشاء صف جديد
+    const newRow = [name];
+    for (let i = 0; i < mazharYears.length; i++) {
+        newRow.push('-');
+    }
+    
+    mazharTableData.push(newRow);
+    mazhar_addPerson(name);
+    
+    mazhar_closeAddPersonModal();
+    mazhar_renderTable();
+    mazhar_showNotification('تم إضافة الشخص ✓', 'success');
+}
+
+// ============================================
+// فتح مودال إضافة سنة
+// ============================================
+function mazhar_openAddYearModal() {
+    if (localStorage.getItem('mazharIsEditable') !== 'true') return;
+    
+    document.getElementById('mazharYearInput').value = '';
+    document.getElementById('mazharAddYearModal').style.display = 'flex';
+    document.getElementById('mazharYearInput').focus();
+}
+
+// ============================================
+// إغلاق مودال إضافة سنة
+// ============================================
+function mazhar_closeAddYearModal() {
+    document.getElementById('mazharAddYearModal').style.display = 'none';
+    document.getElementById('mazharYearInput').value = '';
+}
+
+// ============================================
+// إضافة سنة جديدة
+// ============================================
+function mazhar_addNewYear() {
+    const year = document.getElementById('mazharYearInput').value.trim();
+    
+    if (!year) {
+        mazhar_showNotification('الرجاء إدخال السنة', 'warning');
+        return;
+    }
+    
+    if (mazharYears.includes(year)) {
+        mazhar_showNotification('هذه السنة موجودة بالفعل', 'warning');
+        return;
+    }
+    
+    mazharYears.push(year);
+    mazharTableData.forEach(row => {
+        row.push('-');
+    });
+    
+    mazhar_addYear(year);
+    
+    mazhar_closeAddYearModal();
+    mazhar_renderTable();
+    mazhar_showNotification('تم إضافة السنة ✓', 'success');
+}
+
+// ============================================
+// البحث والفلترة
+// ============================================
+function mazhar_filterTable() {
+    const searchTerm = document.getElementById('mazharSearchInput').value.toLowerCase();
+    const rows = document.querySelectorAll('#mazharTableBody tr');
+    
+    rows.forEach(row => {
+        const nameCell = row.querySelector('td:nth-child(2)');
+        if (nameCell) {
+            const name = nameCell.textContent.toLowerCase();
+            row.style.display = name.includes(searchTerm) ? '' : 'none';
+        }
+    });
+}
+
+// ============================================
+// حفظ البيانات (وهمي - البيانات تحفظ تلقائياً)
+// ============================================
+function mazhar_saveData() {
+    if (localStorage.getItem('mazharIsEditable') !== 'true') return;
+    
+    mazhar_showNotification('جاري حفظ البيانات...', 'info');
+    
+    // البيانات محفوظة تلقائياً عند كل تعديل
+    setTimeout(() => {
+        mazhar_showNotification('تم حفظ البيانات بنجاح ✓', 'success');
+    }, 500);
+}
+
+// ============================================
+// تصدير إلى CSV
+// ============================================
+function mazhar_exportToCSV() {
+    let csv = 'الاسم,' + mazharYears.join(',') + '\n';
+    
+    mazharTableData.forEach(row => {
+        csv += row.join(',') + '\n';
+    });
+    
+    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+    const link = document.createElement('a');
+    const url = URL.createObjectURL(blob);
+    
+    link.setAttribute('href', url);
+    link.setAttribute('download', 'family_data.csv');
+    link.style.visibility = 'hidden';
+    
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    
+    mazhar_showNotification('تم تصدير البيانات ✓', 'success');
+}
+
+// ============================================
+// عمليات Google Sheet
+// ============================================
+
+function mazhar_updateCell(row, col, value) {
+    fetch(MAZHAR_WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'updateCell',
+            row: row,
+            col: col,
+            value: value
+        })
+    }).catch(error => console.error('خطأ:', error));
+}
+
+function mazhar_addPerson(name) {
+    fetch(MAZHAR_WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'addPerson',
+            name: name,
+            yearsCount: mazharYears.length
+        })
+    }).catch(error => console.error('خطأ:', error));
+}
+
+function mazhar_deletePerson(row) {
+    fetch(MAZHAR_WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'deletePerson',
+            row: row
+        })
+    }).catch(error => console.error('خطأ:', error));
+}
+
+function mazhar_addYear(year) {
+    fetch(MAZHAR_WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'addYear',
+            year: year
+        })
+    }).catch(error => console.error('خطأ:', error));
+}
+
+function mazhar_deleteYear(col) {
+    fetch(MAZHAR_WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'deleteYear',
+            col: col
+        })
+    }).catch(error => console.error('خطأ:', error));
+}
+
+function mazhar_updateYear(col, newYear) {
+    fetch(MAZHAR_WEB_APP_URL, {
+        method: 'POST',
+        body: JSON.stringify({
+            action: 'updateYear',
+            col: col,
+            year: newYear
+        })
+    }).catch(error => console.error('خطأ:', error));
+}
+
+// ============================================
+// إظهار الإشعارات
+// ============================================
+function mazhar_showNotification(message, type = 'info') {
+    const notification = document.getElementById('mazharNotification');
+    notification.textContent = message;
+    notification.className = 'notification show ' + type;
+    
+    setTimeout(() => {
+        notification.classList.remove('show');
+    }, 3000);
+}
+
+// ============================================
+// إغلاق المودالات عند الضغط خارجها
+// ============================================
+window.addEventListener('click', function(event) {
+    const modals = [
+        'mazharAddPersonModal',
+        'mazharAddYearModal',
+        'mazharEditCellModal',
+        'mazharEditNameModal',
+        'mazharEditYearHeaderModal'
+    ];
+    
+    modals.forEach(modalId => {
+        const modal = document.getElementById(modalId);
+        if (modal && event.target === modal) {
+            modal.style.display = 'none';
+        }
+    });
+});
+
+// ============================================
+// اختصارات لوحة المفاتيح
+// ============================================
+document.addEventListener('keydown', function(event) {
+    // Escape لإغلاق المودالات
+    if (event.key === 'Escape') {
+        document.querySelectorAll('.modal').forEach(modal => {
+            if (modal.style.display === 'flex') {
+                modal.style.display = 'none';
+            }
+        });
+    }
+    
+    // Ctrl+S لحفظ البيانات
+    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
+        event.preventDefault();
+        if (localStorage.getItem('mazharIsEditable') === 'true') {
+            mazhar_saveData();
+        }
+    }
+});
 function editRow(index) {
     alert(`تعديل الصف رقم ${index + 1} - هذه الميزة للمشرف فقط.`);
 }
@@ -313,1166 +833,6 @@ function handleLogout() {
     // تحديث زر تسجيل الدخول في الهيدر
     updateHeaderLoginButton();
 }
-
-// =================================================================
-// دوال صفحة آل مزهر (تعتمد على Google Apps Script)
-// =================================================================
-
-// ============================================
-// متغيرات عامة لصفحة آل مزهر
-// ============================================
-let mazhar_tableData = [];
-let mazhar_years = [];
-let mazhar_editingCell = { row: null, col: null };
-let mazhar_editingName = { row: null };
-let mazhar_editingYear = { col: null };
-
-// **ملاحظة: يجب تغيير هذه الروابط إلى الروابط الخاصة بك**
-const MAZHAR_SHEET_ID = "1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc"; 
-const MAZHAR_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYrKD_o_QNgeaM36P78HbBDfPtqyAD-UX066lcKaVIP6paNvjhYDg/exec"; 
-
-// ============================================
-// تطبيق صلاحيات المشرف لصفحة آل مزهر
-// ============================================
-function mazhar_applyAdminControls() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const adminControls = document.getElementById('mazharAdminControls');
-    const addRowContainer = document.getElementById('mazharAddRowContainer');
-
-    if (isLoggedIn) {
-        adminControls.style.display = 'flex';
-        addRowContainer.style.display = 'block';
-        mazhar_showNotification('وضع المشرف مفعل. يمكنك التعديل الآن.', 'success', 3000);
-    } else {
-        adminControls.style.display = 'none';
-        addRowContainer.style.display = 'none';
-        mazhar_showNotification('وضع المشاهدة مفعل. للتعديل، يرجى تسجيل الدخول في الصفحة الرئيسية.', 'info', 5000);
-    }
-}
-
-// ============================================
-// تحميل البيانات من Google Sheet لصفحة آل مزهر
-// ============================================
-function mazhar_loadData() {
-    mazhar_showNotification('جاري تحميل البيانات...', 'info');
-    
-    fetch(MAZHAR_WEB_APP_URL + '?action=getData')
-        .then(response => response.json())
-        .then(data => {
-            mazhar_tableData = data.data || [];
-            mazhar_years = data.years || [];
-            mazhar_renderTable();
-            mazhar_showNotification('تم تحميل البيانات بنجاح ✓', 'success');
-        })
-        .catch(error => {
-            console.error('خطأ في تحميل بيانات آل مزهر:', error);
-            mazhar_showNotification('خطأ في تحميل البيانات. تأكد من رابط Google Apps Script.', 'error');
-        });
-}
-
-// ============================================
-// رسم الجدول لصفحة آل مزهر
-// ============================================
-function mazhar_renderTable() {
-    const yearsRow = document.getElementById('mazharYearsRow');
-    const tableBody = document.getElementById('mazharTableBody');
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    
-    // مسح الصفوف السابقة
-    yearsRow.innerHTML = '<th colspan="2"></th>';
-    tableBody.innerHTML = '';
-    
-    // إضافة السنوات في الصف الأول
-    mazhar_years.forEach((year, index) => {
-        const th = document.createElement('th');
-        th.className = 'col-year';
-        th.textContent = year;
-        
-        if (isLoggedIn) {
-            th.onclick = () => mazhar_openEditYearHeaderModal(index, year);
-            th.style.cursor = 'pointer';
-            th.title = 'اضغط للتعديل أو الحذف';
-        }
-        
-        yearsRow.appendChild(th);
-    });
-    
-    // إضافة صفوف البيانات
-    mazhar_tableData.forEach((row, rowIndex) => {
-        const tr = document.createElement('tr');
-        
-        // رقم الصف
-        const tdNumber = document.createElement('td');
-        tdNumber.className = 'col-number';
-        tdNumber.textContent = rowIndex + 1;
-        tr.appendChild(tdNumber);
-        
-        // اسم الشخص
-        const tdName = document.createElement('td');
-        tdName.className = 'col-name';
-        tdName.textContent = row[0] || '';
-        
-        if (isLoggedIn) {
-            tdName.onclick = () => mazhar_openEditNameModal(rowIndex, row[0]);
-            tdName.style.cursor = 'pointer';
-            tdName.title = 'اضغط للتعديل أو الحذف';
-        }
-        
-        tr.appendChild(tdName);
-        
-        // خلايا البيانات
-        for (let colIndex = 1; colIndex <= mazhar_years.length; colIndex++) {
-            const td = document.createElement('td');
-            const value = row[colIndex] || '-';
-            
-            const cell = document.createElement('div');
-            cell.className = 'data-cell ' + mazhar_getCellClass(value);
-            cell.textContent = value;
-            
-            if (isLoggedIn) {
-                cell.onclick = () => mazhar_openEditCellModal(rowIndex, colIndex - 1, row[0], mazhar_years[colIndex - 1], value);
-            } else {
-                cell.style.cursor = 'default';
-            }
-            
-            td.appendChild(cell);
-            tr.appendChild(td);
-        }
-        
-        tableBody.appendChild(tr);
-    });
-}
-
-// ============================================
-// تحديد فئة الخلية بناءً على القيمة لصفحة آل مزهر
-// ============================================
-function mazhar_getCellClass(value) {
-    if (value === 'مشارك') return 'participant';
-    if (value === 'X') return 'absent';
-    if (value === '-') return 'empty';
-    return 'custom';
-}
-
-// ============================================
-// فتح مودال تعديل الخانة لصفحة آل مزهر
-// ============================================
-function mazhar_openEditCellModal(row, col, personName, year, currentValue) {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    mazhar_editingCell = { row, col };
-    document.getElementById('mazharEditPersonName').textContent = personName;
-    document.getElementById('mazharEditYearValue').textContent = year;
-    document.getElementById('mazharEditCellValue').value = currentValue;
-    
-    // إعادة تعيين الأزرار
-    document.querySelectorAll('#mazharEditCellModal .option-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    document.getElementById('mazharEditCellModal').classList.add('show');
-}
-
-// ============================================
-// إغلاق مودال تعديل الخانة لصفحة آل مزهر
-// ============================================
-function mazhar_closeEditCellModal() {
-    document.getElementById('mazharEditCellModal').classList.remove('show');
-    document.getElementById('mazharEditCellValue').value = '';
-}
-
-// ============================================
-// تعيين قيمة الخانة من الأزرار لصفحة آل مزهر
-// ============================================
-function mazhar_setEditValue(value) {
-    document.getElementById('mazharEditCellValue').value = value;
-    
-    // تحديث الأزرار النشطة
-    document.querySelectorAll('#mazharEditCellModal .option-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.textContent.includes(value)) {
-            btn.classList.add('active');
-        }
-    });
-}
-
-// ============================================
-// حفظ تعديل الخانة لصفحة آل مزهر
-// ============================================
-function mazhar_saveEditCell() {
-    const value = document.getElementById('mazharEditCellValue').value.trim();
-    
-    if (!value) {
-        mazhar_showNotification('الرجاء إدخال قيمة', 'warning');
-        return;
-    }
-    
-    mazhar_tableData[mazhar_editingCell.row][mazhar_editingCell.col + 1] = value;
-    
-    // حفظ في Google Sheet
-    mazhar_updateCell(mazhar_editingCell.row, mazhar_editingCell.col + 1, value);
-    
-    mazhar_closeEditCellModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم تحديث البيانات ✓', 'success');
-}
-
-// ============================================
-// فتح مودال تعديل الاسم لصفحة آل مزهر
-// ============================================
-function mazhar_openEditNameModal(row, currentName) {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    mazhar_editingName = { row };
-    document.getElementById('mazharEditNameValue').value = currentName;
-    document.getElementById('mazharEditNameModal').classList.add('show');
-    document.getElementById('mazharEditNameValue').focus();
-}
-
-// ============================================
-// إغلاق مودال تعديل الاسم لصفحة آل مزهر
-// ============================================
-function mazhar_closeEditNameModal() {
-    document.getElementById('mazharEditNameModal').classList.remove('show');
-    document.getElementById('mazharEditNameValue').value = '';
-}
-
-// ============================================
-// حفظ تعديل الاسم لصفحة آل مزهر
-// ============================================
-function mazhar_saveEditName() {
-    const newName = document.getElementById('mazharEditNameValue').value.trim();
-    
-    if (!newName) {
-        mazhar_showNotification('الرجاء إدخال اسم', 'warning');
-        return;
-    }
-    
-    mazhar_tableData[mazhar_editingName.row][0] = newName;
-    mazhar_updateCell(mazhar_editingName.row, 0, newName);
-    
-    mazhar_closeEditNameModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم تحديث الاسم ✓', 'success');
-}
-
-// ============================================
-// حذف صف الشخص لصفحة آل مزهر
-// ============================================
-function mazhar_deletePersonRow() {
-    if (confirm('هل أنت متأكد من حذف هذا الشخص؟')) {
-        mazhar_tableData.splice(mazhar_editingName.row, 1);
-        mazhar_deletePerson(mazhar_editingName.row);
-        mazhar_closeEditNameModal();
-        mazhar_renderTable();
-        mazhar_showNotification('تم حذف الشخص ✓', 'success');
-    }
-}
-
-// ============================================
-// فتح مودال تعديل السنة لصفحة آل مزهر
-// ============================================
-function mazhar_openEditYearHeaderModal(col, currentYear) {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    mazhar_editingYear = { col };
-    document.getElementById('mazharEditYearHeaderValue').value = currentYear;
-    document.getElementById('mazharEditYearHeaderModal').classList.add('show');
-    document.getElementById('mazharEditYearHeaderValue').focus();
-}
-
-// ============================================
-// إغلاق مودال تعديل السنة لصفحة آل مزهر
-// ============================================
-function mazhar_closeEditYearHeaderModal() {
-    document.getElementById('mazharEditYearHeaderModal').classList.remove('show');
-    document.getElementById('mazharEditYearHeaderValue').value = '';
-}
-
-// ============================================
-// حفظ تعديل السنة لصفحة آل مزهر
-// ============================================
-function mazhar_saveEditYearHeader() {
-    const newYear = document.getElementById('mazharEditYearHeaderValue').value.trim();
-    
-    if (!newYear) {
-        mazhar_showNotification('الرجاء إدخال السنة', 'warning');
-        return;
-    }
-    
-    mazhar_years[mazhar_editingYear.col] = newYear;
-    mazhar_updateYear(mazhar_editingYear.col, newYear);
-    
-    mazhar_closeEditYearHeaderModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم تحديث السنة ✓', 'success');
-}
-
-// ============================================
-// حذف عمود السنة لصفحة آل مزهر
-// ============================================
-function mazhar_deleteYearColumn() {
-    if (confirm('هل أنت متأكد من حذف هذه السنة؟')) {
-        mazhar_years.splice(mazhar_editingYear.col, 1);
-        mazhar_tableData.forEach(row => {
-            row.splice(mazhar_editingYear.col + 1, 1);
-        });
-        mazhar_deleteYear(mazhar_editingYear.col);
-        mazhar_closeEditYearHeaderModal();
-        mazhar_renderTable();
-        mazhar_showNotification('تم حذف السنة ✓', 'success');
-    }
-}
-
-// ============================================
-// فتح مودال إضافة شخص لصفحة آل مزهر
-// ============================================
-function mazhar_openAddPersonModal() {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    document.getElementById('mazharPersonName').value = '';
-    document.getElementById('mazharAddPersonModal').classList.add('show');
-    document.getElementById('mazharPersonName').focus();
-}
-
-// ============================================
-// إغلاق مودال إضافة شخص لصفحة آل مزهر
-// ============================================
-function mazhar_closeAddPersonModal() {
-    document.getElementById('mazharAddPersonModal').classList.remove('show');
-    document.getElementById('mazharPersonName').value = '';
-}
-
-// ============================================
-// إضافة شخص جديد لصفحة آل مزهر
-// ============================================
-function mazhar_addNewPerson() {
-    const name = document.getElementById('mazharPersonName').value.trim();
-    
-    if (!name) {
-        mazhar_showNotification('الرجاء إدخال اسم الشخص', 'warning');
-        return;
-    }
-    
-    // إنشاء صف جديد
-    const newRow = [name];
-    for (let i = 0; i < mazhar_years.length; i++) {
-        newRow.push('-');
-    }
-    
-    mazhar_tableData.push(newRow);
-    mazhar_addPerson(name);
-    
-    mazhar_closeAddPersonModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم إضافة الشخص ✓', 'success');
-}
-
-// ============================================
-// فتح مودال إضافة سنة لصفحة آل مزهر
-// ============================================
-function mazhar_openAddYearModal() {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    document.getElementById('mazharYearInput').value = '';
-    document.getElementById('mazharAddYearModal').classList.add('show');
-    document.getElementById('mazharYearInput').focus();
-}
-
-// ============================================
-// إغلاق مودال إضافة سنة لصفحة آل مزهر
-// ============================================
-function mazhar_closeAddYearModal() {
-    document.getElementById('mazharAddYearModal').classList.remove('show');
-    document.getElementById('mazharYearInput').value = '';
-}
-
-// ============================================
-// إضافة سنة جديدة لصفحة آل مزهر
-// ============================================
-function mazhar_addNewYear() {
-    const year = document.getElementById('mazharYearInput').value.trim();
-    
-    if (!year) {
-        mazhar_showNotification('الرجاء إدخال السنة', 'warning');
-        return;
-    }
-    
-    if (mazhar_years.includes(year)) {
-        mazhar_showNotification('هذه السنة موجودة بالفعل', 'warning');
-        return;
-    }
-    
-    mazhar_years.push(year);
-    mazhar_tableData.forEach(row => {
-        row.push('-');
-    });
-    
-    mazhar_addYear(year);
-    
-    mazhar_closeAddYearModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم إضافة السنة ✓', 'success');
-}
-
-// ============================================
-// البحث والفلترة لصفحة آل مزهر
-// ============================================
-function mazhar_filterTable() {
-    const searchTerm = document.getElementById('mazharSearchInput').value.toLowerCase();
-    const rows = document.querySelectorAll('#mazharTableBody tr');
-    
-    rows.forEach(row => {
-        const nameCell = row.querySelector('td:nth-child(2)');
-        if (nameCell) {
-            const name = nameCell.textContent.toLowerCase();
-            row.style.display = name.includes(searchTerm) ? '' : 'none';
-        }
-    });
-}
-
-// ============================================
-// حفظ البيانات لصفحة آل مزهر (وظيفة وهمية)
-// ============================================
-function mazhar_saveData() {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    mazhar_showNotification('جاري حفظ البيانات...', 'info');
-    
-    // البيانات محفوظة تلقائياً عند كل تعديل
-    setTimeout(() => {
-        mazhar_showNotification('تم حفظ البيانات بنجاح ✓', 'success');
-    }, 500);
-}
-
-// ============================================
-// تصدير إلى CSV لصفحة آل مزهر
-// ============================================
-function mazhar_exportToCSV() {
-    let csv = 'الاسم,' + mazhar_years.join(',') + '\n';
-    
-    mazhar_tableData.forEach(row => {
-        csv += row.join(',') + '\n';
-    });
-    
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'family_mazhar_data.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    mazhar_showNotification('تم تصدير البيانات ✓', 'success');
-}
-
-// ============================================
-// عمليات Google Sheet لصفحة آل مزهر
-// ============================================
-
-function mazhar_updateCell(row, col, value) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'updateCell',
-            row: row,
-            col: col,
-            value: value
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_addPerson(name) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'addPerson',
-            name: name,
-            yearsCount: mazhar_years.length
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_deletePerson(row) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'deletePerson',
-            row: row
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_addYear(year) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'addYear',
-            year: year
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_deleteYear(col) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'deleteYear',
-            col: col
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_updateYear(col, newYear) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'updateYear',
-            col: col,
-            year: newYear
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-// ============================================
-// إظهار الإشعارات لصفحة آل مزهر
-// ============================================
-function mazhar_showNotification(message, type = 'info', duration = 3000) {
-    const notification = document.getElementById('mazharNotification');
-    notification.textContent = message;
-    notification.className = 'notification show ' + type;
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, duration);
-}
-
-// ============================================
-// إغلاق المودالات عند الضغط خارجها لصفحة آل مزهر
-// ============================================
-window.addEventListener('click', function(event) {
-    // إضافة مودالات آل مزهر
-    const mazharModals = [
-        'mazharAddPersonModal',
-        'mazharAddYearModal',
-        'mazharEditCellModal',
-        'mazharEditNameModal',
-        'mazharEditYearHeaderModal'
-    ];
-    
-    mazharModals.forEach(modalId => {
-        const modal = document.getElementById(modalId);
-        if (event.target === modal) {
-            modal.classList.remove('show');
-        }
-    });
-});
-
-// ============================================
-// اختصارات لوحة المفاتيح لصفحة آل مزهر
-// ============================================
-document.addEventListener('keydown', function(event) {
-    // Escape لإغلاق المودالات
-    if (event.key === 'Escape') {
-        document.querySelectorAll('.modal.show').forEach(modal => {
-            modal.classList.remove('show');
-        });
-    }
-    
-    // Ctrl+S لحفظ البيانات
-    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
-        event.preventDefault();
-        // نحدد دالة الحفظ بناءً على الصفحة النشطة
-        if (document.getElementById('familyPageMazhar').classList.contains('active')) {
-            mazhar_saveData();
-        } else {
-            // دالة حفظ وهمية للصفحات الأخرى
-        }
-    }
-});
-
-// =================================================================
-// دوال صفحة آل مزهر (تعتمد على Google Apps Script)
-// =================================================================
-
-// ============================================
-// متغيرات عامة لصفحة آل مزهر
-// ============================================
-let mazhar_tableData = [];
-let mazhar_years = [];
-let mazhar_editingCell = { row: null, col: null };
-let mazhar_editingName = { row: null };
-let mazhar_editingYear = { col: null };
-
-// **ملاحظة: يجب تغيير هذه الروابط إلى الروابط الخاصة بك**
-const MAZHAR_SHEET_ID = "1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc"; 
-const MAZHAR_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYrKD_o_QNgeaM36P78HbBDfPtqyAD-UX066lcKaVIP6paNvjhYDg/exec"; 
-
-// ============================================
-// تطبيق صلاحيات المشرف لصفحة آل مزهر
-// ============================================
-function mazhar_applyAdminControls() {
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    const adminControls = document.getElementById('mazharAdminControls');
-    const addRowContainer = document.getElementById('mazharAddRowContainer');
-
-    if (isLoggedIn) {
-        adminControls.style.display = 'flex';
-        addRowContainer.style.display = 'block';
-        mazhar_showNotification('وضع المشرف مفعل. يمكنك التعديل الآن.', 'success', 3000);
-    } else {
-        adminControls.style.display = 'none';
-        addRowContainer.style.display = 'none';
-        mazhar_showNotification('وضع المشاهدة مفعل. للتعديل، يرجى تسجيل الدخول في الصفحة الرئيسية.', 'info', 5000);
-    }
-}
-
-// ============================================
-// تحميل البيانات من Google Sheet لصفحة آل مزهر
-// ============================================
-function mazhar_loadData() {
-    mazhar_showNotification('جاري تحميل البيانات...', 'info');
-    
-    fetch(MAZHAR_WEB_APP_URL + '?action=getData')
-        .then(response => response.json())
-        .then(data => {
-            mazhar_tableData = data.data || [];
-            mazhar_years = data.years || [];
-            mazhar_renderTable();
-            mazhar_showNotification('تم تحميل البيانات بنجاح ✓', 'success');
-        })
-        .catch(error => {
-            console.error('خطأ في تحميل بيانات آل مزهر:', error);
-            mazhar_showNotification('خطأ في تحميل البيانات. تأكد من رابط Google Apps Script.', 'error');
-        });
-}
-
-// ============================================
-// رسم الجدول لصفحة آل مزهر
-// ============================================
-function mazhar_renderTable() {
-    const yearsRow = document.getElementById('mazharYearsRow');
-    const tableBody = document.getElementById('mazharTableBody');
-    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
-    
-    // مسح الصفوف السابقة
-    yearsRow.innerHTML = '<th colspan="2"></th>';
-    tableBody.innerHTML = '';
-    
-    // إضافة السنوات في الصف الأول
-    mazhar_years.forEach((year, index) => {
-        const th = document.createElement('th');
-        th.className = 'col-year';
-        th.textContent = year;
-        
-        if (isLoggedIn) {
-            th.onclick = () => mazhar_openEditYearHeaderModal(index, year);
-            th.style.cursor = 'pointer';
-            th.title = 'اضغط للتعديل أو الحذف';
-        }
-        
-        yearsRow.appendChild(th);
-    });
-    
-    // إضافة صفوف البيانات
-    mazhar_tableData.forEach((row, rowIndex) => {
-        const tr = document.createElement('tr');
-        
-        // رقم الصف
-        const tdNumber = document.createElement('td');
-        tdNumber.className = 'col-number';
-        tdNumber.textContent = rowIndex + 1;
-        tr.appendChild(tdNumber);
-        
-        // اسم الشخص
-        const tdName = document.createElement('td');
-        tdName.className = 'col-name';
-        tdName.textContent = row[0] || '';
-        
-        if (isLoggedIn) {
-            tdName.onclick = () => mazhar_openEditNameModal(rowIndex, row[0]);
-            tdName.style.cursor = 'pointer';
-            tdName.title = 'اضغط للتعديل أو الحذف';
-        }
-        
-        tr.appendChild(tdName);
-        
-        // خلايا البيانات
-        for (let colIndex = 1; colIndex <= mazhar_years.length; colIndex++) {
-            const td = document.createElement('td');
-            const value = row[colIndex] || '-';
-            
-            const cell = document.createElement('div');
-            cell.className = 'data-cell ' + mazhar_getCellClass(value);
-            cell.textContent = value;
-            
-            if (isLoggedIn) {
-                cell.onclick = () => mazhar_openEditCellModal(rowIndex, colIndex - 1, row[0], mazhar_years[colIndex - 1], value);
-            } else {
-                cell.style.cursor = 'default';
-            }
-            
-            td.appendChild(cell);
-            tr.appendChild(td);
-        }
-        
-        tableBody.appendChild(tr);
-    });
-}
-
-// ============================================
-// تحديد فئة الخلية بناءً على القيمة لصفحة آل مزهر
-// ============================================
-function mazhar_getCellClass(value) {
-    if (value === 'مشارك') return 'participant';
-    if (value === 'X') return 'absent';
-    if (value === '-') return 'empty';
-    return 'custom';
-}
-
-// ============================================
-// فتح مودال تعديل الخانة لصفحة آل مزهر
-// ============================================
-function mazhar_openEditCellModal(row, col, personName, year, currentValue) {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    mazhar_editingCell = { row, col };
-    document.getElementById('mazharEditPersonName').textContent = personName;
-    document.getElementById('mazharEditYearValue').textContent = year;
-    document.getElementById('mazharEditCellValue').value = currentValue;
-    
-    // إعادة تعيين الأزرار
-    document.querySelectorAll('#mazharEditCellModal .option-btn').forEach(btn => {
-        btn.classList.remove('active');
-    });
-    
-    document.getElementById('mazharEditCellModal').classList.add('show');
-}
-
-// ============================================
-// إغلاق مودال تعديل الخانة لصفحة آل مزهر
-// ============================================
-function mazhar_closeEditCellModal() {
-    document.getElementById('mazharEditCellModal').classList.remove('show');
-    document.getElementById('mazharEditCellValue').value = '';
-}
-
-// ============================================
-// تعيين قيمة الخانة من الأزرار لصفحة آل مزهر
-// ============================================
-function mazhar_setEditValue(value) {
-    document.getElementById('mazharEditCellValue').value = value;
-    
-    // تحديث الأزرار النشطة
-    document.querySelectorAll('#mazharEditCellModal .option-btn').forEach(btn => {
-        btn.classList.remove('active');
-        if (btn.textContent.includes(value)) {
-            btn.classList.add('active');
-        }
-    });
-}
-
-// ============================================
-// حفظ تعديل الخانة لصفحة آل مزهر
-// ============================================
-function mazhar_saveEditCell() {
-    const value = document.getElementById('mazharEditCellValue').value.trim();
-    
-    if (!value) {
-        mazhar_showNotification('الرجاء إدخال قيمة', 'warning');
-        return;
-    }
-    
-    mazhar_tableData[mazhar_editingCell.row][mazhar_editingCell.col + 1] = value;
-    
-    // حفظ في Google Sheet
-    mazhar_updateCell(mazhar_editingCell.row, mazhar_editingCell.col + 1, value);
-    
-    mazhar_closeEditCellModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم تحديث البيانات ✓', 'success');
-}
-
-// ============================================
-// فتح مودال تعديل الاسم لصفحة آل مزهر
-// ============================================
-function mazhar_openEditNameModal(row, currentName) {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    mazhar_editingName = { row };
-    document.getElementById('mazharEditNameValue').value = currentName;
-    document.getElementById('mazharEditNameModal').classList.add('show');
-    document.getElementById('mazharEditNameValue').focus();
-}
-
-// ============================================
-// إغلاق مودال تعديل الاسم لصفحة آل مزهر
-// ============================================
-function mazhar_closeEditNameModal() {
-    document.getElementById('mazharEditNameModal').classList.remove('show');
-    document.getElementById('mazharEditNameValue').value = '';
-}
-
-// ============================================
-// حفظ تعديل الاسم لصفحة آل مزهر
-// ============================================
-function mazhar_saveEditName() {
-    const newName = document.getElementById('mazharEditNameValue').value.trim();
-    
-    if (!newName) {
-        mazhar_showNotification('الرجاء إدخال اسم', 'warning');
-        return;
-    }
-    
-    mazhar_tableData[mazhar_editingName.row][0] = newName;
-    mazhar_updateCell(mazhar_editingName.row, 0, newName);
-    
-    mazhar_closeEditNameModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم تحديث الاسم ✓', 'success');
-}
-
-// ============================================
-// حذف صف الشخص لصفحة آل مزهر
-// ============================================
-function mazhar_deletePersonRow() {
-    if (confirm('هل أنت متأكد من حذف هذا الشخص؟')) {
-        mazhar_tableData.splice(mazhar_editingName.row, 1);
-        mazhar_deletePerson(mazhar_editingName.row);
-        mazhar_closeEditNameModal();
-        mazhar_renderTable();
-        mazhar_showNotification('تم حذف الشخص ✓', 'success');
-    }
-}
-
-// ============================================
-// فتح مودال تعديل السنة لصفحة آل مزهر
-// ============================================
-function mazhar_openEditYearHeaderModal(col, currentYear) {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    mazhar_editingYear = { col };
-    document.getElementById('mazharEditYearHeaderValue').value = currentYear;
-    document.getElementById('mazharEditYearHeaderModal').classList.add('show');
-    document.getElementById('mazharEditYearHeaderValue').focus();
-}
-
-// ============================================
-// إغلاق مودال تعديل السنة لصفحة آل مزهر
-// ============================================
-function mazhar_closeEditYearHeaderModal() {
-    document.getElementById('mazharEditYearHeaderModal').classList.remove('show');
-    document.getElementById('mazharEditYearHeaderValue').value = '';
-}
-
-// ============================================
-// حفظ تعديل السنة لصفحة آل مزهر
-// ============================================
-function mazhar_saveEditYearHeader() {
-    const newYear = document.getElementById('mazharEditYearHeaderValue').value.trim();
-    
-    if (!newYear) {
-        mazhar_showNotification('الرجاء إدخال السنة', 'warning');
-        return;
-    }
-    
-    mazhar_years[mazhar_editingYear.col] = newYear;
-    mazhar_updateYear(mazhar_editingYear.col, newYear);
-    
-    mazhar_closeEditYearHeaderModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم تحديث السنة ✓', 'success');
-}
-
-// ============================================
-// حذف عمود السنة لصفحة آل مزهر
-// ============================================
-function mazhar_deleteYearColumn() {
-    if (confirm('هل أنت متأكد من حذف هذه السنة؟')) {
-        mazhar_years.splice(mazhar_editingYear.col, 1);
-        mazhar_tableData.forEach(row => {
-            row.splice(mazhar_editingYear.col + 1, 1);
-        });
-        mazhar_deleteYear(mazhar_editingYear.col);
-        mazhar_closeEditYearHeaderModal();
-        mazhar_renderTable();
-        mazhar_showNotification('تم حذف السنة ✓', 'success');
-    }
-}
-
-// ============================================
-// فتح مودال إضافة شخص لصفحة آل مزهر
-// ============================================
-function mazhar_openAddPersonModal() {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    document.getElementById('mazharPersonName').value = '';
-    document.getElementById('mazharAddPersonModal').classList.add('show');
-    document.getElementById('mazharPersonName').focus();
-}
-
-// ============================================
-// إغلاق مودال إضافة شخص لصفحة آل مزهر
-// ============================================
-function mazhar_closeAddPersonModal() {
-    document.getElementById('mazharAddPersonModal').classList.remove('show');
-    document.getElementById('mazharPersonName').value = '';
-}
-
-// ============================================
-// إضافة شخص جديد لصفحة آل مزهر
-// ============================================
-function mazhar_addNewPerson() {
-    const name = document.getElementById('mazharPersonName').value.trim();
-    
-    if (!name) {
-        mazhar_showNotification('الرجاء إدخال اسم الشخص', 'warning');
-        return;
-    }
-    
-    // إنشاء صف جديد
-    const newRow = [name];
-    for (let i = 0; i < mazhar_years.length; i++) {
-        newRow.push('-');
-    }
-    
-    mazhar_tableData.push(newRow);
-    mazhar_addPerson(name);
-    
-    mazhar_closeAddPersonModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم إضافة الشخص ✓', 'success');
-}
-
-// ============================================
-// فتح مودال إضافة سنة لصفحة آل مزهر
-// ============================================
-function mazhar_openAddYearModal() {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    document.getElementById('mazharYearInput').value = '';
-    document.getElementById('mazharAddYearModal').classList.add('show');
-    document.getElementById('mazharYearInput').focus();
-}
-
-// ============================================
-// إغلاق مودال إضافة سنة لصفحة آل مزهر
-// ============================================
-function mazhar_closeAddYearModal() {
-    document.getElementById('mazharAddYearModal').classList.remove('show');
-    document.getElementById('mazharYearInput').value = '';
-}
-
-// ============================================
-// إضافة سنة جديدة لصفحة آل مزهر
-// ============================================
-function mazhar_addNewYear() {
-    const year = document.getElementById('mazharYearInput').value.trim();
-    
-    if (!year) {
-        mazhar_showNotification('الرجاء إدخال السنة', 'warning');
-        return;
-    }
-    
-    if (mazhar_years.includes(year)) {
-        mazhar_showNotification('هذه السنة موجودة بالفعل', 'warning');
-        return;
-    }
-    
-    mazhar_years.push(year);
-    mazhar_tableData.forEach(row => {
-        row.push('-');
-    });
-    
-    mazhar_addYear(year);
-    
-    mazhar_closeAddYearModal();
-    mazhar_renderTable();
-    mazhar_showNotification('تم إضافة السنة ✓', 'success');
-}
-
-// ============================================
-// البحث والفلترة لصفحة آل مزهر
-// ============================================
-function mazhar_filterTable() {
-    const searchTerm = document.getElementById('mazharSearchInput').value.toLowerCase();
-    const rows = document.querySelectorAll('#mazharTableBody tr');
-    
-    rows.forEach(row => {
-        const nameCell = row.querySelector('td:nth-child(2)');
-        if (nameCell) {
-            const name = nameCell.textContent.toLowerCase();
-            row.style.display = name.includes(searchTerm) ? '' : 'none';
-        }
-    });
-}
-
-// ============================================
-// حفظ البيانات لصفحة آل مزهر (وظيفة وهمية)
-// ============================================
-function mazhar_saveData() {
-    if (localStorage.getItem('isLoggedIn') !== 'true') return;
-    
-    mazhar_showNotification('جاري حفظ البيانات...', 'info');
-    
-    // البيانات محفوظة تلقائياً عند كل تعديل
-    setTimeout(() => {
-        mazhar_showNotification('تم حفظ البيانات بنجاح ✓', 'success');
-    }, 500);
-}
-
-// ============================================
-// تصدير إلى CSV لصفحة آل مزهر
-// ============================================
-function mazhar_exportToCSV() {
-    let csv = 'الاسم,' + mazhar_years.join(',') + '\n';
-    
-    mazhar_tableData.forEach(row => {
-        csv += row.join(',') + '\n';
-    });
-    
-    const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement('a');
-    const url = URL.createObjectURL(blob);
-    
-    link.setAttribute('href', url);
-    link.setAttribute('download', 'family_mazhar_data.csv');
-    link.style.visibility = 'hidden';
-    
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-    
-    mazhar_showNotification('تم تصدير البيانات ✓', 'success');
-}
-
-// ============================================
-// عمليات Google Sheet لصفحة آل مزهر
-// ============================================
-
-function mazhar_updateCell(row, col, value) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'updateCell',
-            row: row,
-            col: col,
-            value: value
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_addPerson(name) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'addPerson',
-            name: name,
-            yearsCount: mazhar_years.length
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_deletePerson(row) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'deletePerson',
-            row: row
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_addYear(year) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'addYear',
-            year: year
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_deleteYear(col) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'deleteYear',
-            col: col
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-function mazhar_updateYear(col, newYear) {
-    fetch(MAZHAR_WEB_APP_URL, {
-        method: 'POST',
-        body: JSON.stringify({
-            action: 'updateYear',
-            col: col,
-            year: newYear
-        })
-    }).catch(error => console.error('خطأ:', error));
-}
-
-// ============================================
-// إظهار الإشعارات لصفحة آل مزهر
-// ============================================
-function mazhar_showNotification(message, type = 'info', duration = 3000) {
-    const notification = document.getElementById('mazharNotification');
-    notification.textContent = message;
-    notification.className = 'notification show ' + type;
-    
-    setTimeout(() => {
-        notification.classList.remove('show');
-    }, duration);
-}
-
-// ============================================
-// إغلاق المودالات عند الضغط خارجها لصفحة آل مزهر
-// ============================================
-window.addEventListener('click', function(event) {
-    // إضافة مودالات آل مزهر
-    const mazharModals = [
-        'mazharAddPersonModal',
-        'mazharAddYearModal',
-        'mazharEditCellModal',
-        'mazharEditNameModal',
-        'mazharEditYearHeaderModal'
-    ];
-    
-    mazharModals.forEach(modalId => {
-        const modal = document.getElementById(modalId);
-        if (event.target === modal) {
-            modal.classList.remove('show');
-        }
-    });
-});
-
-// ============================================
-// اختصارات لوحة المفاتيح لصفحة آل مزهر
-// ============================================
-document.addEventListener('keydown', function(event) {
-    // Escape لإغلاق المودالات
-    if (event.key === 'Escape') {
-        document.querySelectorAll('.modal.show').forEach(modal => {
-            modal.classList.remove('show');
-        });
-    }
-    
-    // Ctrl+S لحفظ البيانات
-    if ((event.ctrlKey || event.metaKey) && event.key === 's') {
-        event.preventDefault();
-        // نحدد دالة الحفظ بناءً على الصفحة النشطة
-        if (document.getElementById('familyPageMazhar').classList.contains('active')) {
-            mazhar_saveData();
-        } else {
-            // دالة حفظ وهمية للصفحات الأخرى
-        }
-    }
-});
 
 function showAdminPanel() {
     showPage('adminPage');

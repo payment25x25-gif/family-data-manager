@@ -882,52 +882,494 @@ tbody td {
 }
 
 /* ============================================
-   15. تنسيقات صفحة آل مزهر الجديدة (Prism Flux Inspired)
+   15. تنسيقات صفحة آل مزهر (Google Apps Script)
    ============================================ */
 
-/* المتغيرات الأساسية - Light Mode */
+/* المتغيرات الخاصة بصفحة آل مزهر */
 :root {
-    --primary-black: #0a0a0a;
-    --carbon-dark: #121212;
-    --carbon-medium: #1a1a1a;
-    --metal-dark: #3a3a3a;
-    --accent-red: #ff3333;
-    --accent-blue: #00a8ff;
-    --accent-green: #00ff88;
-    --accent-purple: #9945ff;
-    --text-primary-new: #ffffff;
-    --text-secondary-new: #b0b0b0;
-    --text-dim: #808080;
-    --border-color-new: var(--metal-dark);
-    --shadow-new: 0 8px 20px rgba(0, 0, 0, 0.5);
+    --mazhar-primary-black: #0a0a0a;
+    --mazhar-carbon-dark: #121212;
+    --mazhar-carbon-medium: #1a1a1a;
+    --mazhar-metal-dark: #3a3a3a;
+    --mazhar-accent-red: #ff3333;
+    --mazhar-accent-blue: #00a8ff;
+    --mazhar-accent-green: #00ff88;
+    --mazhar-accent-purple: #9945ff;
+    --mazhar-text-primary: #ffffff;
+    --mazhar-text-secondary: #b0b0b0;
+    --mazhar-text-dim: #808080;
+    --mazhar-border-color-new: var(--mazhar-metal-dark);
+    --mazhar-shadow-new: 0 8px 20px rgba(0, 0, 0, 0.5);
 }
 
-/* الوضع الداكن - تعديل المتغيرات لتجنب التعارض */
-body.dark-mode {
-    --text-primary-new: #f1f5f9;
-    --text-secondary-new: #cbd5e1;
-}
-
-/* إعدادات عامة وتطبيق الخلفية الداكنة */
-.family-page-mazher {
-    /* استبدال الخط القديم بخط Tajawal */
-    font-family: 'Tajawal', sans-serif;
-    background: var(--primary-black);
-    color: var(--text-primary-new);
-    padding: 0; /* إزالة البادينج الخارجي */
+/* تطبيق التنسيقات على الصفحة المخصصة */
+.page#familyPageMazhar {
+    padding: 0;
+    background: var(--mazhar-primary-black);
+    color: var(--mazhar-text-primary);
     min-height: 100vh;
-    /* تطبيق خلفية Prism Flux */
-    position: relative;
-    overflow-x: hidden;
 }
 
-.family-page-mazher::before {
+.page#familyPageMazhar .container {
+    max-width: 1400px;
+    margin: 20px auto;
+    background: var(--mazhar-carbon-dark);
+    border-radius: 12px;
+    box-shadow: var(--mazhar-shadow-new);
+    overflow: hidden;
+    border: 1px solid var(--mazhar-metal-dark);
+    padding: 0; /* إزالة البادينج الداخلي للحاوية الرئيسية */
+}
+
+/* رأس الصفحة */
+.header-mazher {
+    background: var(--mazhar-carbon-medium);
+    color: var(--mazhar-text-primary);
+    padding: 20px 30px;
+    border-bottom: 1px solid var(--mazhar-metal-dark);
+}
+
+.header-mazher .header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 15px;
+}
+
+.header-mazher h1 {
+    color: var(--mazhar-accent-red);
+    font-weight: 700;
+    font-size: 1.8rem;
+}
+
+.header-mazher .header-actions {
+    display: flex;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
+/* شريط الأدوات */
+.toolbar {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 15px 30px;
+    background: var(--mazhar-carbon-dark);
+    border-bottom: 1px solid var(--mazhar-metal-dark);
+    gap: 15px;
+}
+
+.search-box input {
+    padding: 10px 15px;
+    border-radius: 8px;
+    border: 1px solid var(--mazhar-metal-dark);
+    background: var(--mazhar-carbon-medium);
+    color: var(--mazhar-text-primary);
+    width: 250px;
+    transition: all 0.3s ease;
+}
+
+.search-box input:focus {
+    outline: none;
+    border-color: var(--mazhar-accent-blue);
+    box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.2);
+}
+
+.toolbar-actions {
+    display: flex;
+    gap: 10px;
+}
+
+/* الأزرار */
+.btn {
+    padding: 10px 18px;
+    border: none;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s ease;
+    border-radius: 8px;
+}
+
+.btn-primary-mazher {
+    background: var(--mazhar-accent-blue);
+    color: var(--mazhar-text-primary);
+}
+
+.btn-primary-mazher:hover {
+    background: #0095e6;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 168, 255, 0.4);
+}
+
+.btn-secondary {
+    background: var(--mazhar-metal-dark);
+    color: var(--mazhar-text-primary);
+}
+
+.btn-secondary:hover {
+    background: #4a4a4a;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(58, 58, 58, 0.4);
+}
+
+.btn-success {
+    background: var(--mazhar-accent-green);
+    color: var(--mazhar-primary-black);
+}
+
+.btn-success:hover {
+    background: #00e673;
+    transform: translateY(-2px);
+    box-shadow: 0 4px 10px rgba(0, 255, 136, 0.4);
+}
+
+.btn-danger {
+    background: var(--mazhar-accent-red);
+    color: var(--mazhar-text-primary);
+}
+
+.btn-danger:hover {
+    background: #cc2929;
+    transform: translateY(-2px);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--mazhar-accent-blue);
+    border: 2px solid var(--mazhar-accent-blue);
+}
+
+.btn-outline:hover {
+    background: var(--mazhar-accent-blue);
+    color: var(--mazhar-text-primary);
+}
+
+.btn-small {
+    padding: 8px 12px;
+    font-size: 0.9rem;
+}
+
+/* الجدول */
+.table-wrapper {
+    overflow-x: auto;
+    padding: 20px;
+}
+
+.data-table {
+    width: 100%;
+    border-collapse: collapse;
+    min-width: 1000px;
+    border: 1px solid var(--mazhar-metal-dark);
+}
+
+.data-table th, .data-table td {
+    padding: 12px 15px;
+    text-align: center;
+    border: 1px solid var(--mazhar-metal-dark);
+    white-space: nowrap;
+}
+
+.header-row {
+    background: var(--mazhar-carbon-medium);
+    color: var(--mazhar-text-primary);
+}
+
+.years-row {
+    background: var(--mazhar-carbon-dark);
+}
+
+.years-row th {
+    color: var(--mazhar-text-secondary);
+}
+
+.years-row th:hover {
+    background: var(--mazhar-metal-dark);
+    color: var(--mazhar-accent-blue);
+    cursor: pointer;
+}
+
+.data-table tbody tr {
+    border-bottom: 1px solid var(--mazhar-metal-dark);
+    transition: background-color 0.3s ease;
+}
+
+.data-table tbody tr:hover {
+    background: var(--mazhar-carbon-medium);
+}
+
+.data-table tbody tr:nth-child(even) {
+    background: var(--mazhar-carbon-dark);
+}
+
+.data-table tbody td {
+    color: var(--mazhar-text-secondary);
+}
+
+.data-table tbody td:first-child {
+    background: var(--mazhar-carbon-medium);
+    color: var(--mazhar-text-primary);
+}
+
+.data-table tbody td:nth-child(2) {
+    background: var(--mazhar-carbon-dark);
+    color: var(--mazhar-text-primary);
+    cursor: pointer;
+}
+
+.data-table tbody td:nth-child(2):hover {
+    background: var(--mazhar-metal-dark);
+    color: var(--mazhar-accent-blue);
+}
+
+/* خلايا البيانات */
+.data-cell {
+    padding: 5px;
+    border-radius: 6px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    display: block;
+}
+
+.data-cell:hover {
+    background: var(--mazhar-accent-blue);
+    color: var(--mazhar-text-primary);
+    transform: scale(1.05);
+}
+
+.data-cell.participant {
+    background: var(--mazhar-accent-green);
+    color: var(--mazhar-primary-black);
+}
+
+.data-cell.participant:hover {
+    background: var(--mazhar-accent-blue);
+    color: var(--mazhar-text-primary);
+}
+
+.data-cell.absent {
+    background: var(--mazhar-accent-red);
+    color: var(--mazhar-text-primary);
+}
+
+.data-cell.absent:hover {
+    background: var(--mazhar-accent-blue);
+    color: var(--mazhar-text-primary);
+}
+
+.data-cell.empty {
+    background: var(--mazhar-metal-dark);
+    color: var(--mazhar-text-dim);
+}
+
+.data-cell.empty:hover {
+    background: var(--mazhar-accent-blue);
+    color: var(--mazhar-text-primary);
+}
+
+.data-cell.custom {
+    background: var(--mazhar-accent-purple);
+    color: var(--mazhar-text-primary);
+}
+
+.data-cell.custom:hover {
+    background: var(--mazhar-accent-blue);
+    color: var(--mazhar-text-primary);
+}
+
+/* المودالات */
+.modal-content {
+    background: var(--mazhar-carbon-medium);
+    border: 1px solid var(--mazhar-metal-dark);
+    box-shadow: var(--mazhar-shadow-new);
+}
+
+.modal-header {
+    background: var(--mazhar-carbon-dark);
+    border-radius: 12px 12px 0 0;
+    border-bottom: 1px solid var(--mazhar-metal-dark);
+    padding: 15px 20px;
+}
+
+.modal-header h2 {
+    color: var(--mazhar-accent-red);
+    font-size: 1.5rem;
+}
+
+.modal-header .close-btn {
+    color: var(--mazhar-text-secondary);
+    position: static;
+    background: none;
+}
+
+.modal-header .close-btn:hover {
+    color: var(--mazhar-accent-red);
+    transform: none;
+}
+
+.modal-body {
+    padding: 20px;
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    color: var(--mazhar-text-primary);
+    display: block;
+    margin-bottom: 5px;
+}
+
+.form-group input {
+    width: 100%;
+    padding: 10px;
+    border-radius: 6px;
+    border: 1px solid var(--mazhar-metal-dark);
+    background: var(--mazhar-carbon-dark);
+    color: var(--mazhar-text-primary);
+}
+
+.form-group input:focus {
+    outline: none;
+    border-color: var(--mazhar-accent-blue);
+    box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.2);
+}
+
+.edit-options {
+    display: flex;
+    gap: 10px;
+    margin-bottom: 10px;
+}
+
+.option-btn {
+    flex-grow: 1;
+    padding: 10px;
+    border: 2px solid var(--mazhar-metal-dark);
+    background: var(--mazhar-carbon-dark);
+    color: var(--mazhar-text-secondary);
+    border-radius: 6px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+}
+
+.option-btn:hover {
+    border-color: var(--mazhar-accent-blue);
+    background: var(--mazhar-metal-dark);
+    color: var(--mazhar-text-primary);
+}
+
+.option-btn.active {
+    background: var(--mazhar-accent-blue);
+    color: var(--mazhar-text-primary);
+    border-color: var(--mazhar-accent-blue);
+}
+
+.modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 10px;
+    padding: 15px 20px;
+    border-top: 1px solid var(--mazhar-metal-dark);
+}
+
+/* الإشعارات */
+.notification {
+    position: fixed;
+    bottom: 20px;
+    right: 20px;
+    padding: 15px 25px;
+    border-radius: 8px;
+    color: white;
+    font-weight: 600;
+    z-index: 3000;
+    opacity: 0;
+    transition: opacity 0.3s ease, transform 0.3s ease;
+    transform: translateY(100%);
+}
+
+.notification.show {
+    opacity: 1;
+    transform: translateY(0);
+}
+
+.notification.info {
+    background: #00a8ff;
+}
+
+.notification.success {
+    background: #00ff88;
+    color: var(--mazhar-primary-black);
+}
+
+.notification.error {
+    background: var(--mazhar-accent-red);
+}
+
+.notification.warning {
+    background: #ffc107;
+    color: var(--mazhar-primary-black);
+}
+
+/* إخفاء الستايل القديم من styles.css لضمان تطبيق الستايل الجديد */
+.page#familyPageMazhar .container {
+    background: var(--mazhar-carbon-dark) !important;
+}
+
+.page#familyPageMazhar .header-mazher {
+    background: var(--mazhar-carbon-medium) !important;
+}
+
+.page#familyPageMazhar .toolbar {
+    background: var(--mazhar-carbon-dark) !important;
+}
+
+.page#familyPageMazhar .header-row {
+    background: var(--mazhar-carbon-medium) !important;
+}
+
+.page#familyPageMazhar .years-row {
+    background: var(--mazhar-carbon-dark) !important;
+}
+
+.page#familyPageMazhar .data-table tbody tr:nth-child(even) {
+    background: var(--mazhar-carbon-dark) !important;
+}
+
+.page#familyPageMazhar .data-table tbody td:first-child {
+    background: var(--mazhar-carbon-medium) !important;
+}
+
+.page#familyPageMazhar .data-table tbody td:nth-child(2) {
+    background: var(--mazhar-carbon-dark) !important;
+}
+
+.page#familyPageMazhar .modal-content {
+    background: var(--mazhar-carbon-medium) !important;
+}
+
+.page#familyPageMazhar .modal-header {
+    background: var(--mazhar-carbon-dark) !important;
+}
+
+/* تعديل الـ body عند عرض صفحة آل مزهر */
+.page#familyPageMazhar.active ~ body {
+    background: var(--mazhar-primary-black) !important;
+    color: var(--mazhar-text-primary) !important;
+}
+
+/* تعديل الـ body عند عرض صفحة آل مزهر */
+.page#familyPageMazhar.active ~ body::before,
+.page#familyPageMazhar.active ~ body::after {
     content: '';
     position: fixed;
     top: 0;
     left: 0;
     width: 100%;
     height: 100%;
+    z-index: -2;
+}
+
+.page#familyPageMazhar.active ~ body::before {
     background:
         repeating-linear-gradient(0deg,
             transparent,
@@ -940,21 +1382,15 @@ body.dark-mode {
             rgba(255, 255, 255, 0.03) 2px,
             rgba(255, 255, 255, 0.03) 4px),
         linear-gradient(135deg,
-            var(--primary-black) 0%,
-            var(--carbon-dark) 25%,
-            var(--carbon-medium) 50%,
-            var(--carbon-dark) 75%,
-            var(--primary-black) 100%);
+            var(--mazhar-primary-black) 0%,
+            var(--mazhar-carbon-dark) 25%,
+            var(--mazhar-carbon-medium) 50%,
+            var(--mazhar-carbon-dark) 75%,
+            var(--mazhar-primary-black) 100%);
     z-index: -2;
 }
 
-.family-page-mazher::after {
-    content: '';
-    position: fixed;
-    top: 0;
-    left: 0;
-    width: 100%;
-    height: 100%;
+.page#familyPageMazhar.active ~ body::after {
     background-image:
         linear-gradient(rgba(255, 51, 51, 0.05) 2px, transparent 2px),
         linear-gradient(90deg, rgba(255, 51, 51, 0.05) 2px, transparent 2px);
@@ -971,196 +1407,4 @@ body.dark-mode {
     100% {
         transform: translate(150px, 150px);
     }
-}
-
-/* تنسيق الحاوية (Container) */
-.family-page-mazher .container {
-    max-width: 1400px;
-    margin: 20px auto; /* إضافة هامش علوي وسفلي */
-    background: var(--carbon-dark); /* خلفية داكنة */
-    border-radius: 12px;
-    box-shadow: var(--shadow-new);
-    overflow: hidden;
-    border: 1px solid var(--metal-dark);
-    padding: 0; /* إزالة البادينج الداخلي للحاوية الرئيسية */
-}
-
-/* رأس الصفحة (Header) */
-.family-page-mazher .header-mazher {
-    background: var(--carbon-medium); /* خلفية أغمق قليلاً */
-    color: var(--text-primary-new);
-    padding: 20px 30px;
-    border-bottom: 1px solid var(--metal-dark);
-}
-
-.family-page-mazher .header-mazher h1 {
-    color: var(--accent-red); /* لون مميز للعنوان */
-    font-weight: 700;
-}
-
-.family-page-mazher .header-mazher p {
-    color: var(--text-secondary-new);
-}
-
-/* شريط الأدوات (Toolbar) */
-.family-page-mazher .toolbar {
-    background: var(--carbon-dark);
-    border-bottom: 1px solid var(--metal-dark);
-    padding: 15px 30px;
-    display: flex;
-    justify-content: space-between;
-    align-items: center;
-    flex-wrap: wrap;
-    gap: 10px;
-}
-
-.family-page-mazher .search-box input {
-    background: var(--carbon-medium);
-    color: var(--text-primary-new);
-    border: 1px solid var(--metal-dark);
-    border-radius: 8px;
-    padding: 8px 15px;
-}
-
-.family-page-mazher .search-box input:focus {
-    border-color: var(--accent-blue);
-    box-shadow: 0 0 0 3px rgba(0, 168, 255, 0.2);
-}
-
-/* الأزرار (Buttons) - يتم استخدام الأزرار الرئيسية في styles.css ولكن نضيف التنسيقات الخاصة بالصفحة الجديدة */
-.family-page-mazher .btn {
-    border-radius: 8px;
-    font-weight: 600;
-    transition: all 0.3s ease;
-    padding: 10px 18px;
-    cursor: pointer;
-}
-
-.family-page-mazher .btn-primary-mazher {
-    background: var(--accent-red);
-    color: var(--text-primary-new);
-    border: none;
-}
-
-.family-page-mazher .btn-primary-mazher:hover {
-    background: #e62e2e;
-    transform: translateY(-2px);
-    box-shadow: 0 4px 10px rgba(255, 51, 51, 0.4);
-}
-
-.family-page-mazher .btn-secondary1 {
-    background: linear-gradient(90deg, #290ec4, #5d90b9, #ff0099);
-    background-size: 250% 250%;
-    color: #ffffff;
-    position: relative;
-    overflow: hidden;
-    z-index: 1;
-    transition: 0.25s ease;
-    border: none;
-    border-radius: 10px;
-    font-weight: 600;
-    padding: 10px 18px;
-    animation: btnGlow 6s linear infinite;
-}
-
-.family-page-mazher .btn-secondary1:hover {
-    transform: translateY(-3px);
-    box-shadow: 0 8px 25px rgba(255, 80, 80, 0.55);
-}
-
-/* الجدول (Table) */
-.family-page-mazher .data-table {
-    width: 100%;
-    border-collapse: collapse;
-    border: 1px solid var(--metal-dark);
-    margin-top: 20px;
-}
-
-.family-page-mazher .header-row {
-    background: var(--carbon-medium);
-    color: var(--text-primary-new);
-}
-
-.family-page-mazher .header-row th {
-    border: 1px solid var(--metal-dark);
-    padding: 12px;
-    text-align: center;
-}
-
-.family-page-mazher .years-row {
-    background: var(--carbon-dark);
-}
-
-.family-page-mazher .years-row th {
-    color: var(--text-secondary-new);
-    border: 1px solid var(--metal-dark);
-    padding: 10px;
-    cursor: pointer;
-}
-
-.family-page-mazher .years-row th:hover {
-    background: var(--metal-dark);
-    color: var(--accent-blue);
-}
-
-.family-page-mazher .data-table tbody tr {
-    border-bottom: 1px solid var(--metal-dark);
-}
-
-.family-page-mazher .data-table tbody tr:hover {
-    background: var(--carbon-medium);
-}
-
-.family-page-mazher .data-table tbody tr:nth-child(even) {
-    background: var(--carbon-dark);
-}
-
-.family-page-mazher .data-table tbody td {
-    border: 1px solid var(--metal-dark);
-    color: var(--text-secondary-new);
-    padding: 10px;
-    text-align: center;
-}
-
-.family-page-mazher .data-table tbody td:first-child {
-    background: var(--carbon-medium);
-    color: var(--text-primary-new);
-    font-weight: 600;
-}
-
-/* خلايا البيانات (Data Cells) */
-.family-page-mazher .data-cell {
-    border-radius: 6px;
-    cursor: pointer;
-    transition: all 0.2s ease;
-}
-
-.family-page-mazher .data-cell.participant {
-    background: var(--accent-green);
-    color: var(--primary-black);
-}
-
-.family-page-mazher .data-cell.absent {
-    background: var(--accent-red);
-    color: var(--text-primary-new);
-}
-
-.family-page-mazher .data-cell.empty {
-    background: var(--metal-dark);
-    color: var(--text-dim);
-}
-
-.family-page-mazher .data-cell.custom {
-    background: var(--accent-purple);
-    color: var(--text-primary-new);
-}
-
-/* إخفاء شريط الإدارة الرئيسي عند عرض صفحة آل مزهر */
-.family-page-mazher #adminNav {
-    display: none !important;
-}
-
-/* إخفاء الهيدر والفوتر الرئيسي عند عرض صفحة آل مزهر */
-.family-page-mazher .header, .family-page-mazher .footer {
-    display: none !important;
 }
