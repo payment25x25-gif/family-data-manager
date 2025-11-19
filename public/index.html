@@ -170,3 +170,167 @@
     <script src="script.js"></script>
 </body>
 </html>
+
+
+        <!-- Family Data Page (Al Mazhar - Google Apps Script) -->
+        <div id="familyPageMazhar" class="page family-page-mazhar">
+                        <div class="container">
+                <!-- رأس الصفحة -->
+                <header class="header-mazher">
+                    <div class="header-content">
+                        <h1>📊 مدير بيانات عائلة آل مزهر</h1>
+                        <button class="btn btn-secondary1" onclick="goHome()">🏠 الرئيسية</button>
+                    </div>
+                    <div class="header-actions" id="mazharAdminControls" style="display: none;">
+                        <button class="btn btn-primary-mazher" onclick="mazhar_openAddPersonModal()">➕ إضافة شخص</button>
+                        <button class="btn btn-secondary" onclick="mazhar_openAddYearModal()">📅 إضافة سنة</button>
+                        <button class="btn btn-success" onclick="mazhar_saveData()">💾 حفظ البيانات</button>
+                    </div>
+                </header>
+
+                <!-- قسم الأدوات والفلاتر -->
+                <div class="toolbar">
+                    <div class="search-box">
+                        <input type="text" id="mazharSearchInput" placeholder="🔍 ابحث عن اسم..." onkeyup="mazhar_filterTable()">
+                    </div>
+                    <div class="toolbar-actions">
+                        <button class="btn btn-small" onclick="mazhar_exportToCSV()">📥 تصدير CSV</button>
+                        <button class="btn btn-small" onclick="location.reload()">🔄 تحديث</button>
+                    </div>
+                </div>
+
+                <!-- الجدول الرئيسي -->
+                <div class="table-wrapper">
+                    <table id="mazharDataTable" class="data-table">
+                        <thead>
+                            <tr class="header-row">
+                                <th class="col-number">#</th>
+                                <th class="col-name">الاسم</th>
+                                <th class="col-year" colspan="100">السنوات</th>
+                            </tr>
+                            <tr class="years-row" id="mazharYearsRow">
+                                <th colspan="2"></th>
+                            </tr>
+                        </thead>
+                        <tbody id="mazharTableBody">
+                            <!-- سيتم ملء الجدول بواسطة JavaScript -->
+                        </tbody>
+                    </table>
+                </div>
+
+                <!-- زر إضافة صف جديد في الأسفل -->
+                <div class="add-row-container" id="mazharAddRowContainer" style="display: none;">
+                    <button class="btn btn-outline" onclick="mazhar_openAddPersonModal()">➕ إضافة شخص جديد</button>
+                </div>
+            </div>
+
+            <!-- مودالات صفحة آل مزهر -->
+            <div id="mazharAddPersonModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>إضافة شخص جديد</h2>
+                        <button class="close-btn" onclick="mazhar_closeAddPersonModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="mazharPersonName">اسم الشخص:</label>
+                            <input type="text" id="mazharPersonName" placeholder="أدخل الاسم الكامل" autofocus>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="mazhar_closeAddPersonModal()">إلغاء</button>
+                        <button class="btn btn-primary" onclick="mazhar_addNewPerson()">إضافة</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mazharAddYearModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>إضافة سنة جديدة</h2>
+                        <button class="close-btn" onclick="mazhar_closeAddYearModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="mazharYearInput">السنة الهجرية:</label>
+                            <input type="number" id="mazharYearInput" placeholder="مثال: 1451" autofocus>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="mazhar_closeAddYearModal()">إلغاء</button>
+                        <button class="btn btn-primary" onclick="mazhar_addNewYear()">إضافة</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mazharEditCellModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>تعديل البيانات</h2>
+                        <button class="close-btn" onclick="mazhar_closeEditCellModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label>الشخص: <span id="mazharEditPersonName"></span></label>
+                            <label>السنة: <span id="mazharEditYearValue"></span></label>
+                        </div>
+                        <div class="form-group">
+                            <label for="mazharEditCellValue">اختر أو أدخل القيمة:</label>
+                            <div class="edit-options">
+                                <button class="option-btn" onclick="mazhar_setEditValue('مشارك')">✅ مشارك</button>
+                                <button class="option-btn" onclick="mazhar_setEditValue('X')">❌ X</button>
+                                <button class="option-btn" onclick="mazhar_setEditValue('-')">⚪ -</button>
+                            </div>
+                            <input type="text" id="mazharEditCellValue" placeholder="أو أدخل قيمة مخصصة...">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="mazhar_closeEditCellModal()">إلغاء</button>
+                        <button class="btn btn-primary" onclick="mazhar_saveEditCell()">حفظ</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mazharEditNameModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>تعديل الاسم</h2>
+                        <button class="close-btn" onclick="mazhar_closeEditNameModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="mazharEditNameValue">الاسم الجديد:</label>
+                            <input type="text" id="mazharEditNameValue" placeholder="أدخل الاسم الجديد" autofocus>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="mazhar_closeEditNameModal()">إلغاء</button>
+                        <button class="btn btn-primary" onclick="mazhar_saveEditName()">حفظ</button>
+                        <button class="btn btn-danger" onclick="mazhar_deletePersonRow()">حذف الشخص</button>
+                    </div>
+                </div>
+            </div>
+
+            <div id="mazharEditYearHeaderModal" class="modal">
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h2>تعديل السنة</h2>
+                        <button class="close-btn" onclick="mazhar_closeEditYearHeaderModal()">&times;</button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="mazharEditYearHeaderValue">السنة الجديدة:</label>
+                            <input type="number" id="mazharEditYearHeaderValue" placeholder="مثال: 1451" autofocus>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button class="btn btn-secondary" onclick="mazhar_closeEditYearHeaderModal()">إلغاء</button>
+                        <button class="btn btn-primary" onclick="mazhar_saveEditYearHeader()">حفظ</button>
+                        <button class="btn btn-danger" onclick="mazhar_deleteYearColumn()">حذف السنة</button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- إشعارات -->
+            <div id="mazharNotification" class="notification"></div>
+        </div>

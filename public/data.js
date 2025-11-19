@@ -117,9 +117,3 @@ const familiesData = {
         }
     ]
 };
-
-// بيانات المشرف
-const adminCredentials = {
-    username: "admin",
-    password: "admin123"
-};
