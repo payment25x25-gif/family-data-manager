@@ -8,7 +8,7 @@
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css"/>
     <meta name="description" content="منصة متكاملة لعرض وإدارة بيانات العائلات بسهولة وكفاءة">
 </head>
-<body>
+<body onload="init()" id="mainBody">
     <!-- Header -->
     <header class="header">
         <div class="header-content">
@@ -173,7 +173,7 @@
 
 
         <!-- Family Data Page (Al Mazhar - Google Apps Script) -->
-        <div id="familyPageMazhar" class="page family-page-mazhar">
+        <div id="familyPageMazhar" class="page" data-body-class="family-page-mazher">
                         <div class="container">
                 <!-- رأس الصفحة -->
                 <header class="header-mazher">

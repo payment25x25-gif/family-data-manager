@@ -59,15 +59,38 @@ function goHome() {
     showPage('homePage');
 }
 
+// ============================================
+// دالة مساعدة لتحديث الـ Body Class
+// ============================================
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    const page = document.getElementById(pageId);
+    if (page) {
+        page.classList.add('active');
+        
+        // تحديث Body Class للتصميم الخاص
+        const body = document.getElementById('mainBody');
+        const bodyClass = page.getAttribute('data-body-class');
+        
+        // إزالة جميع الكلاسات الخاصة بالصفحات الأخرى
+        body.className = '';
+        
+        if (bodyClass) {
+            body.classList.add(bodyClass);
+        }
+    }
+}
+
 function showFamily(familyName, isAdminMode = false) {
     // إخفاء جميع الصفحات
-    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    // showPage('familyPage'); // تم نقلها إلى نهاية الدالة
 
     if (familyName === 'آل مزهر') {
         // عرض صفحة آل مزهر الجديدة
-        document.getElementById('familyPageMazhar').classList.add('active');
+        showPage('familyPageMazhar');
         // هنا يجب أن نستدعي دالة تحميل البيانات الخاصة بآل مزهر
-        mazhar_loadData();
+        // mazhar_loadData(); // تم نقل الاستدعاء إلى init() لضمان تحميل البيانات عند بدء التشغيل
+
         // تطبيق الصلاحيات
         mazhar_applyAdminControls();
         return;
@@ -113,6 +136,25 @@ function showFamily(familyName, isAdminMode = false) {
     
     // عرض الصفحة
     showPage('familyPage');
+}
+
+function showPage(pageId) {
+    document.querySelectorAll('.page').forEach(page => page.classList.remove('active'));
+    const page = document.getElementById(pageId);
+    if (page) {
+        page.classList.add('active');
+        
+        // تحديث Body Class للتصميم الخاص
+        const body = document.getElementById('mainBody');
+        const bodyClass = page.getAttribute('data-body-class');
+        
+        // إزالة جميع الكلاسات الخاصة بالصفحات الأخرى
+        body.className = '';
+        
+        if (bodyClass) {
+            body.classList.add(bodyClass);
+        }
+    }
 }
 
 // ============================================
