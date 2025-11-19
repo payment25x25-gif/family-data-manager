@@ -1,0 +1,702 @@
+/* ============================================
+   مدير بيانات العائلات - Styles
+   ============================================ */
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+:root {
+    --primary-color: #3b82f6;
+    --secondary-color: #10b981;
+    --bg-color: #ffffff;
+    --text-color: #1f2937;
+    --border-color: #e5e7eb;
+    --header-bg: #f9fafb;
+    --shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    --shadow-lg: 0 10px 15px -3px rgba(0, 0, 0, 0.1);
+}
+
+body.dark-mode {
+    --bg-color: #1f2937;
+    --text-color: #f3f4f6;
+    --border-color: #374151;
+    --header-bg: #111827;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    background-color: var(--bg-color);
+    color: var(--text-color);
+    transition: background-color 0.3s, color 0.3s;
+    line-height: 1.6;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+}
+
+/* ============================================
+   Header
+   ============================================ */
+
+.header {
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border-color);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+    box-shadow: var(--shadow);
+}
+
+.header-content {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 1rem 0;
+}
+
+.logo {
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: var(--primary-color);
+}
+
+.theme-toggle {
+    background: none;
+    border: none;
+    font-size: 1.5rem;
+    cursor: pointer;
+    padding: 0.5rem;
+    border-radius: 0.5rem;
+    transition: background-color 0.3s;
+}
+
+.theme-toggle:hover {
+    background-color: var(--border-color);
+}
+
+/* ============================================
+   Main Content
+   ============================================ */
+
+.main {
+    min-height: calc(100vh - 200px);
+    padding: 2rem 0;
+}
+
+.page {
+    display: none;
+    animation: fadeIn 0.3s ease-in;
+}
+
+.page.active {
+    display: block;
+}
+
+@keyframes fadeIn {
+    from {
+        opacity: 0;
+        transform: translateY(10px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+/* ============================================
+   Hero Section
+   ============================================ */
+
+.hero {
+    text-align: center;
+    padding: 4rem 0;
+    background: linear-gradient(135deg, var(--primary-color) 0%, var(--secondary-color) 100%);
+    color: white;
+    border-radius: 1rem;
+    margin-bottom: 3rem;
+}
+
+.hero h2 {
+    font-size: 2.5rem;
+    margin-bottom: 1rem;
+}
+
+.hero p {
+    font-size: 1.1rem;
+    opacity: 0.9;
+}
+
+/* ============================================
+   Families Section
+   ============================================ */
+
+.families-section {
+    margin: 3rem 0;
+}
+
+.families-section h3 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.families-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+    gap: 2rem;
+    margin-bottom: 3rem;
+}
+
+.family-card {
+    color: white;
+    padding: 2rem;
+    border-radius: 1rem;
+    box-shadow: var(--shadow-lg);
+    transition: transform 0.3s, box-shadow 0.3s;
+    cursor: pointer;
+}
+
+.family-card:hover {
+    transform: translateY(-5px);
+    box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.2);
+}
+
+.family-card h4 {
+    font-size: 1.5rem;
+    margin-bottom: 0.5rem;
+}
+
+.family-card p {
+    margin-bottom: 1.5rem;
+    opacity: 0.9;
+}
+
+/* ============================================
+   Buttons
+   ============================================ */
+
+.btn-primary {
+    background-color: white;
+    color: #1f2937;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    width: 100%;
+}
+
+.btn-primary:hover {
+    background-color: #f3f4f6;
+    transform: scale(1.02);
+}
+
+.btn-back {
+    background-color: var(--border-color);
+    color: var(--text-color);
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    margin-bottom: 1rem;
+}
+
+.btn-back:hover {
+    background-color: var(--primary-color);
+    color: white;
+}
+
+.btn-logout {
+    background-color: #ef4444;
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+}
+
+.btn-logout:hover {
+    background-color: #dc2626;
+}
+
+.btn-edit, .btn-delete {
+    padding: 0.5rem 1rem;
+    border: none;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    margin-left: 5px;
+    font-size: 0.9rem;
+}
+
+.btn-edit {
+    background-color: #f59e0b; /* Amber */
+    color: white;
+}
+
+.btn-edit:hover {
+    background-color: #d97706;
+}
+
+.btn-delete {
+    background-color: #ef4444; /* Red */
+    color: white;
+}
+
+.btn-delete:hover {
+    background-color: #dc2626;
+}
+
+.btn-login {
+    background-color: var(--primary-color);
+    color: white;
+    border: none;
+    padding: 0.75rem 1.5rem;
+    border-radius: 0.5rem;
+    cursor: pointer;
+    font-weight: 600;
+    transition: all 0.3s;
+    width: 100%;
+    font-size: 1rem;
+}
+
+.btn-login:hover {
+    background-color: #2563eb;
+}
+
+/* ============================================
+   Info Section
+   ============================================ */
+
+.info-section {
+    background-color: var(--header-bg);
+    padding: 3rem 0;
+    border-radius: 1rem;
+    margin-top: 3rem;
+}
+
+.info-section h3 {
+    text-align: center;
+    font-size: 2rem;
+    margin-bottom: 2rem;
+}
+
+.info-content {
+    max-width: 600px;
+    margin: 0 auto;
+    text-align: center;
+    line-height: 1.8;
+}
+
+.info-content p {
+    margin-bottom: 1rem;
+    color: var(--text-color);
+}
+
+/* ============================================
+   Family Page
+   ============================================ */
+
+.family-header {
+    margin-bottom: 2rem;
+}
+
+.family-header h2 {
+    font-size: 2rem;
+    margin-top: 1rem;
+}
+
+.table-container {
+    overflow-x: auto;
+    border: 1px solid var(--border-color);
+    border-radius: 0.5rem;
+    box-shadow: var(--shadow);
+}
+
+table {
+    width: 100%;
+    border-collapse: collapse;
+    background-color: var(--bg-color);
+}
+
+thead {
+    background-color: var(--header-bg);
+    border-bottom: 2px solid var(--border-color);
+}
+
+th {
+    padding: 1rem;
+    text-align: right;
+    font-weight: 600;
+    color: var(--primary-color);
+}
+
+td {
+    padding: 0.75rem 1rem;
+    border-bottom: 1px solid var(--border-color);
+}
+
+tbody tr:hover {
+    background-color: var(--header-bg);
+}
+
+/* ============================================
+   Login Modal (Glowing Inputs Style)
+   ============================================ */
+
+.modal {
+    display: none; /* مخفي افتراضياً */
+    position: fixed;
+    z-index: 1000;
+    left: 0;
+    top: 0;
+    width: 100%;
+    height: 100%;
+    overflow: auto;
+    background-color: rgba(0, 0, 0, 0.7); /* خلفية داكنة */
+    justify-content: center;
+    align-items: center;
+    animation: fadeInModal 0.3s;
+}
+
+.modal-content {
+    /* إزالة التنسيقات القديمة للسماح لـ .login-form بالتحكم في المظهر */
+    background-color: transparent;
+    margin: auto;
+    padding: 0;
+    border: none;
+    width: 90%;
+    max-width: 450px;
+    border-radius: 1rem;
+    box-shadow: none;
+    position: relative;
+    animation: slideInTop 0.3s;
+}
+
+.close-btn {
+    color: var(--text-color);
+    float: right;
+    font-size: 28px;
+    font-weight: bold;
+    cursor: pointer;
+    position: absolute;
+    top: 10px;
+    left: 20px;
+}
+
+.close-btn:hover,
+.close-btn:focus {
+    color: #999;
+    text-decoration: none;
+}
+
+@keyframes fadeInModal {
+    from { opacity: 0 }
+    to { opacity: 1 }
+}
+
+@keyframes slideInTop {
+    from { transform: translateY(-50px); opacity: 0 }
+    to { transform: translateY(0); opacity: 1 }
+}
+
+/* إعادة استخدام تنسيقات login-box داخل modal-content */
+.login-form{
+  position: relative;
+  width: 370px;
+  height: auto;
+  padding: 40px 35px 60px;
+  box-sizing: border-box;
+  border-radius: 5px;
+  /* تطبيق الوضع الداكن */
+  background: var(--header-bg);
+  border: 1px solid var(--border-color);
+  box-shadow: inset 0 0 1px var(--border-color);
+}
+.text{
+  font-size: 30px;
+  font-weight: 600;
+  letter-spacing: 2px;
+  text-align: center;
+  /* تطبيق الوضع الداكن */
+  color: var(--text-color);
+}
+.login-form form{
+  margin-top: 40px;
+}
+.login-form form .field{
+  margin-top: 20px;
+  display: flex;
+}
+.field .fas{
+  height: 50px;
+  width: 60px;
+  font-size: 20px;
+  line-height: 50px;
+  border-right: none;
+  border-radius: 5px 0 0 5px;
+  text-align: center;
+  /* تطبيق الوضع الداكن */
+  background: var(--header-bg);
+  border: 1px solid var(--border-color);
+  color: var(--text-color);
+}
+.field input, .login-form form button{
+  height: 50px;
+  width: 100%;
+  outline: none;
+  font-size: 19px;
+  padding: 0 15px;
+  border-radius: 0 5px 5px 0;
+  border: 1px solid var(--border-color);
+  caret-color: var(--primary-color);
+  /* تطبيق الوضع الداكن */
+  background: var(--bg-color);
+  color: var(--text-color);
+}
+.field input{
+    border-radius: 0 5px 5px 0;
+}
+.field input:focus{
+  color: var(--primary-color);
+  box-shadow: 0 0 5px rgba(59, 130, 246, 0.2),
+              inset 0 0 5px rgba(59, 130, 246, 0.1);
+  background: var(--bg-color);
+  animation: glow .8s ease-out infinite alternate;
+}
+@keyframes glow {
+   0%{
+    border-color: var(--primary-color);
+    box-shadow: 0 0 5px rgba(59, 130, 246, 0.2),
+                inset 0 0 5px rgba(59, 130, 246, 0.1);
+  }
+   100%{
+    border-color: var(--primary-color);
+    box-shadow: 0 0 20px rgba(59, 130, 246, 0.6),
+                inset 0 0 10px rgba(59, 130, 246, 0.4);
+  }
+}
+.login-form form button{
+  margin-top: 30px;
+  border-radius: 5px!important;
+  font-weight: 600;
+  letter-spacing: 1px;
+  cursor: pointer;
+  /* تطبيق الوضع الداكن */
+  background-color: var(--primary-color);
+  color: white;
+  border: none;
+  font-size: 1rem;
+  padding: 0.75rem 1.5rem;
+  border-radius: 0.5rem;
+  transition: all 0.3s;
+}
+.login-form form button:hover{
+  background-color: #2563eb;
+  color: white;
+  border: none;
+  box-shadow: none;
+}
+.link{
+  margin-top: 25px;
+  /* تطبيق الوضع الداكن */
+  color: var(--text-color);
+  text-align: center;
+}
+.link a{
+  color: var(--primary-color);
+  text-decoration: none;
+}
+.link a:hover{
+  text-decoration: underline;
+}
+
+/* إزالة التنسيقات القديمة غير المستخدمة */
+.login-box, .login-box h2, .login-subtitle, .form-group, .form-group label, .form-group input {
+    /* تم إزالة التنسيقات القديمة لـ login-box و form-group */
+    display: none !important;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}
+
+.login-info {
+    background-color: var(--header-bg);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.error-message {
+    background-color: #fee2e2;
+    color: #dc2626;
+    padding: 0.75rem;
+    border-radius: 0.5rem;
+    margin-bottom: 1rem;
+    display: none;
+}
+
+.error-message.show {
+    display: block;
+}
+
+.login-info {
+    background-color: var(--header-bg);
+    padding: 1rem;
+    border-radius: 0.5rem;
+    margin-top: 1.5rem;
+    font-size: 0.9rem;
+}
+
+.login-info p {
+    margin: 0.5rem 0;
+}
+
+.login-info code {
+    background-color: var(--bg-color);
+    padding: 0.25rem 0.5rem;
+    border-radius: 0.25rem;
+    font-family: monospace;
+}
+
+/* ============================================
+   Admin Page
+   ============================================ */
+
+.admin-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 2rem;
+    padding-bottom: 1rem;
+    border-bottom: 2px solid var(--border-color);
+}
+
+.admin-header h2 {
+    font-size: 2rem;
+}
+
+.admin-content {
+    background-color: var(--header-bg);
+    padding: 2rem;
+    border-radius: 1rem;
+    text-align: center;
+}
+
+.admin-nav {
+    background-color: var(--header-bg);
+    border-bottom: 1px solid var(--border-color);
+    padding: 1rem 0;
+    margin-bottom: 2rem;
+}
+
+.admin-nav button {
+    background: none;
+    border: none;
+    color: var(--primary-color);
+    cursor: pointer;
+    padding: 0.75rem 1.5rem;
+    font-weight: 600;
+    transition: all 0.3s;
+    margin: 0 0.5rem;
+}
+
+.admin-nav button:hover {
+    background-color: var(--primary-color);
+    color: white;
+    border-radius: 0.5rem;
+}
+
+/* ============================================
+   Footer
+   ============================================ */
+
+.footer {
+    background-color: var(--header-bg);
+    border-top: 1px solid var(--border-color);
+    padding: 2rem 0;
+    text-align: center;
+    margin-top: 3rem;
+    color: #999;
+}
+
+/* ============================================
+   Responsive Design
+   ============================================ */
+
+@media (max-width: 768px) {
+    .hero h2 {
+        font-size: 1.8rem;
+    }
+
+    .families-grid {
+        grid-template-columns: 1fr;
+    }
+
+    .family-header {
+        display: flex;
+        flex-direction: column;
+    }
+
+    table {
+        font-size: 0.9rem;
+    }
+
+    th, td {
+        padding: 0.5rem;
+    }
+
+    .login-box {
+        padding: 1.5rem;
+    }
+}
+
+@media (max-width: 480px) {
+    .header-content {
+        flex-direction: column;
+        gap: 1rem;
+    }
+
+    .logo {
+        font-size: 1.2rem;
+    }
+
+    .hero {
+        padding: 2rem 0;
+    }
+
+    .hero h2 {
+        font-size: 1.5rem;
+    }
+
+    .families-section h3 {
+        font-size: 1.5rem;
+    }
+}
