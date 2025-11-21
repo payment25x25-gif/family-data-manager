@@ -227,7 +227,10 @@ function openFamilyModal(mode, familyName = null) {
     form.dataset.oldFamilyName = familyName || '';
 
     // إخفاء حقل SheetID لأنه لم يعد مستخدماً في الواجهة الأمامية
-    document.getElementById('familySheetIdGroup').style.display = 'none';
+    const familySheetIdGroup = document.getElementById('familySheetIdGroup');
+    if (familySheetIdGroup) {
+        familySheetIdGroup.style.display = 'none';
+    }
 
     if (mode === 'edit' && familyName && familiesIndexData[familyName]) {
         modalTitle.textContent = 'تعديل بيانات العائلة';
