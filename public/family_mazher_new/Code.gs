@@ -1,63 +1,50 @@
 // ============================================
-// Google Apps Script - إدارة بيانات العائلة (الحالة والملاحظة)
+// Google Apps Script - إدارة بيانات عائلة آل بن صالح
 // ============================================
 
-// ملاحظة: تم إزالة تعريف SHEET_ID و SHEET_NAME الثابتين
-// سيتم تمرير Sheet ID ديناميكياً من الواجهة الأمامية
+const SHEET_ID = "1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc";
+const SHEET_NAME = "Sheet1";
 
 // ============================================
-// دالة Web App الرئيسية (GET)
+// دالة Web App الرئيسية
 // ============================================
 function doGet(e) {
   const action = e.parameter.action;
-  const sheetName = e.parameter.sheetName;
   
-  if (action === 'getData' && sheetName) {
-    return ContentService.createTextOutput(JSON.stringify(getData(sheetName)))
+  if (action === 'getData') {
+    return ContentService.createTextOutput(JSON.stringify(getData()))
       .setMimeType(ContentService.MimeType.JSON);
   }
   
-  return ContentService.createTextOutput('Invalid action or missing Sheet ID')
+  return ContentService.createTextOutput('Invalid action')
     .setMimeType(ContentService.MimeType.TEXT);
 }
 
-// ============================================
-// دالة Web App الرئيسية (POST)
-// ============================================
 function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
-    const sheetName = data.sheetName;
-    
-    if (!sheetName) {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Missing Sheet Name' }))
-            .setMimeType(ContentService.MimeType.JSON);
-    }
     
     let result = { success: false };
     
     switch(action) {
       case 'updateCell':
-        result = updateCell(sheetName, data.rowIndex, data.statusColIndex, data.status, data.noteColIndex, data.note);
+        result = updateCell(data.row, data.col, data.value);
         break;
       case 'addPerson':
-        result = addPerson(sheetName, data.personName);
+        result = addPerson(data.name, data.yearsCount);
         break;
       case 'deletePerson':
-        result = deletePerson(sheetName, data.rowIndex);
-        break;
-      case 'updateName':
-        result = updateName(sheetName, data.rowIndex, data.newName);
+        result = deletePerson(data.row);
         break;
       case 'addYear':
-        result = addYear(sheetName, data.year);
+        result = addYear(data.year);
         break;
       case 'deleteYear':
-        result = deleteYear(sheetName, data.yearIndex);
+        result = deleteYear(data.col);
         break;
       case 'updateYear':
-        result = updateYear(sheetName, data.yearIndex, data.newYear);
+        result = updateYear(data.col, data.year);
         break;
       default:
         result = { success: false, message: 'Unknown action' };
@@ -74,220 +61,216 @@ function doPost(e) {
 }
 
 // ============================================
-// 1. الحصول على البيانات (مع دعم الحالة والملاحظة)
+// الحصول على البيانات
 // ============================================
-function getData(sheetName) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(sheetName);
-    
-    if (!sheet) {
-        return { success: false, error: `Sheet '${sheetName}' not found.` };
-    }
-    const range = sheet.getDataRange();
-    const values = range.getValues();
-    
-    if (values.length === 0) {
-      return { success: true, data: [], years: [] };
-    }
-    
-    // الصف الأول يحتوي على السنوات
-    const yearsRow = values[0];
-    const years = [];
-    
-    // استخراج السنوات (تبدأ من العمود الثاني، كل سنة تغطي عمودين: الحالة والملاحظة)
-    for (let i = 1; i < yearsRow.length; i += 2) {
-      if (yearsRow[i]) {
-        years.push(yearsRow[i].toString());
-      }
-    }
-    
-    // استخراج البيانات (تبدأ من الصف الثاني)
-    const data = [];
-    for (let i = 1; i < values.length; i++) {
-      const row = [];
-      for (let j = 0; j < yearsRow.length; j++) {
-        const value = values[i][j];
-        row.push(value ? value.toString() : ''); // لا نستخدم '-' هنا، نتركها فارغة
-      }
-      
-      // تجاهل الصفوف الفارغة
-      if (row[0] && row[0].trim()) {
-        data.push(row);
-      }
-    }
-    
-    return { success: true, data: data, years: years };
-  } catch(error) {
-    Logger.log('Error in getData: ' + error);
-    return { success: false, error: error.toString() };
+function getData() {
+  const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+  const range = sheet.getDataRange();
+  const values = range.getValues();
+  
+  if (values.length === 0) {
+    return { data: [], years: [] };
   }
+  
+  // الصف الأول يحتوي على السنوات
+  const yearsRow = values[0];
+  const years = [];
+  
+  // استخراج السنوات (تبدأ من العمود الثاني)
+  for (let i = 1; i < yearsRow.length; i++) {
+    if (yearsRow[i]) {
+      years.push(yearsRow[i].toString());
+    }
+  }
+  
+  // استخراج البيانات (تبدأ من الصف الثاني)
+  const data = [];
+  for (let i = 1; i < values.length; i++) {
+    const row = [];
+    for (let j = 0; j < yearsRow.length; j++) {
+      const value = values[i][j];
+      row.push(value ? value.toString() : '-');
+    }
+    
+    // تجاهل الصفوف الفارغة
+    if (row[0] && row[0].trim()) {
+      data.push(row);
+    }
+  }
+  
+  return { data: data, years: years };
 }
 
 // ============================================
-// 2. تحديث خانة (الحالة والملاحظة)
+// تحديث خانة واحدة
 // ============================================
-function updateCell(sheetName, rowIndex, statusColIndex, status, noteColIndex, note) {
+function updateCell(row, col, value) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(sheetName);
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
     
-    // rowIndex هو رقم الصف في مصفوفة البيانات (0-indexed)، نضيف 1 لتعويض صف الرؤوس
-    const actualRow = rowIndex + 2; 
+    const actualRow = row + 2;
+    const actualCol = col + 2;
     
-    // تحديث الحالة
-    sheet.getRange(actualRow, statusColIndex).setValue(status);
+    Logger.log('تحديث: الصف ' + actualRow + ' العمود ' + actualCol + ' القيمة: ' + value);
     
-    // تحديث الملاحظة
-    sheet.getRange(actualRow, noteColIndex).setValue(note);
-    
+    sheet.getRange(actualRow, actualCol).setValue(value);
     SpreadsheetApp.flush();
     
     return { success: true, message: 'تم تحديث الخانة بنجاح' };
   } catch(error) {
-    Logger.log('خطأ في updateCell: ' + error);
+    Logger.log('خطأ: ' + error);
     return { success: false, message: error.toString() };
   }
 }
 
 // ============================================
-// 3. إضافة شخص جديد
+// إضافة شخص جديد
 // ============================================
-function addPerson(sheetName, personName) {
+function addPerson(name, yearsCount) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(sheetName);
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
     const lastRow = sheet.getLastRow();
-    const lastCol = sheet.getLastColumn();
     
-    // إنشاء صف جديد
-    const newRow = [personName];
-    // ملء باقي الأعمدة بقيم افتراضية (حالة '-' وملاحظة فارغة)
-    for (let i = 1; i < lastCol; i += 2) {
-        newRow.push('-'); // الحالة
-        newRow.push(''); // الملاحظة
+    sheet.getRange(lastRow + 1, 1).setValue(name);
+    
+    for (let i = 0; i < yearsCount; i++) {
+      sheet.getRange(lastRow + 1, i + 2).setValue('-');
     }
     
-    sheet.appendRow(newRow);
     SpreadsheetApp.flush();
-    
+    Logger.log('تم إضافة شخص: ' + name);
     return { success: true, message: 'تم إضافة الشخص' };
   } catch(error) {
-    Logger.log('خطأ في addPerson: ' + error);
+    Logger.log('خطأ في إضافة شخص: ' + error);
     return { success: false, message: error.toString() };
   }
 }
 
 // ============================================
-// 4. حذف شخص
+// حذف شخص
 // ============================================
-function deletePerson(sheetName, rowIndex) {
+function deletePerson(row) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(sheetName);
-    const actualRow = rowIndex + 2; // +2 لتعويض صف الرؤوس و 0-indexed
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    const actualRow = row + 2;
     
     sheet.deleteRow(actualRow);
     SpreadsheetApp.flush();
-    
+    Logger.log('تم حذف الصف: ' + actualRow);
     return { success: true, message: 'تم حذف الشخص' };
   } catch(error) {
-    Logger.log('خطأ في deletePerson: ' + error);
+    Logger.log('خطأ في حذف شخص: ' + error);
     return { success: false, message: error.toString() };
   }
 }
 
 // ============================================
-// 5. تحديث اسم شخص
+// إضافة سنة جديدة
 // ============================================
-function updateName(sheetName, rowIndex, newName) {
+function addYear(year) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(sheetName);
-    const actualRow = rowIndex + 2; // +2 لتعويض صف الرؤوس و 0-indexed
-    
-    sheet.getRange(actualRow, 1).setValue(newName);
-    SpreadsheetApp.flush();
-    
-    return { success: true, message: 'تم تحديث الاسم' };
-  } catch(error) {
-    Logger.log('خطأ في updateName: ' + error);
-    return { success: false, message: error.toString() };
-  }
-}
-
-// ============================================
-// 6. إضافة سنة جديدة
-// ============================================
-function addYear(sheetName, year) {
-  try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(sheetName);
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
     const lastCol = sheet.getLastColumn();
-    const lastRow = sheet.getLastRow();
     
-    // إضافة السنة في الصف الأول (تغطي عمودين)
+    // إضافة السنة في الصف الأول
     sheet.getRange(1, lastCol + 1).setValue(year);
-    sheet.getRange(1, lastCol + 2).setValue(year);
     
-    // ملء باقي الخلايا في العمودين الجديدين
-    for (let i = 2; i <= lastRow; i++) {
-      sheet.getRange(i, lastCol + 1).setValue('-'); // الحالة الافتراضية
-      sheet.getRange(i, lastCol + 2).setValue(''); // الملاحظة الافتراضية
+    // ملء باقي الخلايا في هذا العمود بـ "-"
+    for (let i = 2; i <= sheet.getLastRow(); i++) {
+      sheet.getRange(i, lastCol + 1).setValue('-');
     }
     
     SpreadsheetApp.flush();
-    
+    Logger.log('تم إضافة سنة: ' + year);
     return { success: true, message: 'تم إضافة السنة' };
   } catch(error) {
-    Logger.log('خطأ في addYear: ' + error);
+    Logger.log('خطأ في إضافة سنة: ' + error);
     return { success: false, message: error.toString() };
   }
 }
 
 // ============================================
-// 7. حذف سنة
+// حذف سنة
 // ============================================
-function deleteYear(sheetName, yearIndex) {
+function deleteYear(col) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(sheetName);
-    // yearIndex هو رقم السنة (0-indexed)، كل سنة تبدأ من العمود 2 (1-indexed) وتغطي عمودين
-    const actualCol = (yearIndex * 2) + 2; 
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    const actualCol = col + 2;
     
-    // حذف عمودي الحالة والملاحظة
-    sheet.deleteColumns(actualCol, 2);
+    sheet.deleteColumn(actualCol);
     SpreadsheetApp.flush();
-    
+    Logger.log('تم حذف العمود: ' + actualCol);
     return { success: true, message: 'تم حذف السنة' };
   } catch(error) {
-    Logger.log('خطأ في deleteYear: ' + error);
+    Logger.log('خطأ في حذف سنة: ' + error);
     return { success: false, message: error.toString() };
   }
 }
 
 // ============================================
-// 8. تحديث السنة
+// تحديث السنة
 // ============================================
-function updateYear(sheetName, yearIndex, newYear) {
+function updateYear(col, newYear) {
   try {
-    const ss = SpreadsheetApp.getActiveSpreadsheet();
-    const sheet = ss.getSheetByName(sheetName);
-    // yearIndex هو رقم السنة (0-indexed)، كل سنة تبدأ من العمود 2 (1-indexed)
-    const actualCol = (yearIndex * 2) + 2; 
+    const sheet = SpreadsheetApp.openById(SHEET_ID).getSheetByName(SHEET_NAME);
+    const actualCol = col + 2;
     
-    // تحديث قيمة السنة في كلا العمودين (الحالة والملاحظة)
     sheet.getRange(1, actualCol).setValue(newYear);
-    sheet.getRange(1, actualCol + 1).setValue(newYear);
-    
     SpreadsheetApp.flush();
-    
+    Logger.log('تم تحديث السنة: ' + newYear);
     return { success: true, message: 'تم تحديث السنة' };
   } catch(error) {
-    Logger.log('خطأ في updateYear: ' + error);
+    Logger.log('خطأ في تحديث سنة: ' + error);
     return { success: false, message: error.toString() };
   }
 }
 
 // ============================================
-// تم إزالة دالة initializeNewFamilySheet لأن التهيئة تتم الآن في Code.gs الرئيسي
+// دالة مساعدة لإدراج البيانات من Excel
+// ============================================
+function insertExcelData() {
+  const ss = SpreadsheetApp.openById(SHEET_ID);
+  const sheet = ss.getSheetByName(SHEET_NAME);
+  
+  // البيانات المستخرجة من Excel
+  const excelData = [
+    [null, 1438, 1439, 1440, 1441, 1442, 1443, 1444, 1445, 1446, 1447, 1448, 1449, 1450, null, null, null, null],
+    ['عبدالله مزهر صالح ', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['محمد عبدالله مزهر', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['عبدالرحمن عبدالله مزهر', 'مشارك', 'مشارك', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', null, null, null, null, null, null, null],
+    ['مزهر عبدالله مزهر', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['خالد عبدالله مزهر', 'مشارك', 'مشارك', 'X', 'X', 'X', 'X', 'X', 'X', 'X', 'X', null, null, null, null, null, null, null],
+    ['علي مزهر صالح', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['محمد علي مزهر', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['مزهر علي مزهر', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['صالح محمد علي ال مزهر', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['سعد صالح محمد', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['خالد صالح محمد', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['فهد صالح محمد', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['وليد صالح محمد', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null],
+    ['زكي سعد محمد ال مزهر', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', 'مشارك', null, null, null, null, null, null, null]
+  ];
+  
+  // حذف البيانات القديمة
+  sheet.clearContents();
+  
+  // إدراج البيانات الجديدة
+  const range = sheet.getRange(1, 1, excelData.length, excelData[0].length);
+  range.setValues(excelData);
+  
+  // تنسيق الصف الأول
+  const headerRange = sheet.getRange(1, 1, 1, excelData[0].length);
+  headerRange.setBackground("#4472C4");
+  headerRange.setFontColor("#FFFFFF");
+  headerRange.setFontWeight("bold");
+  headerRange.setHorizontalAlignment("center");
+  
+  // تنسيق عمود الأسماء
+  const namesRange = sheet.getRange(2, 1, excelData.length - 1, 1);
+  namesRange.setBackground("#D9E1F2");
+  namesRange.setFontWeight("bold");
+  
+  Logger.log("✓ تم إدراج البيانات بنجاح!");
+  Logger.log("عدد الصفوف: " + excelData.length);
+  Logger.log("عدد الأعمدة: " + excelData[0].length);
+}
