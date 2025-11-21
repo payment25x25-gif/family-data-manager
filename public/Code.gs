@@ -147,6 +147,9 @@ function addFamily(data) {
 	    headerRange.setFontColor("#FFFFFF");
 	    headerRange.setFontWeight("bold");
 	    headerRange.setHorizontalAlignment("center");
+	    
+	    // حذف ورقة العمل الافتراضية الإضافية إذا وجدت (عادةً لا توجد عند الإنشاء)
+	    // لا حاجة لحذفها، فقط نستخدم الأولى.
     
     // 3. إضافة صف جديد في فهرس العائلات مع SheetID الجديد
     sheet.appendRow([familyName, description, sheetId, icon]);
