@@ -4,7 +4,7 @@
 
 // --- المتغيرات العامة ---
 const themeToggle = document.getElementById('themeToggle');
-const FAMILY_INDEX_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8pgbJnIaNbbmNFxQK4C2cqFYuTLYOhH56lNzOsaQ2QdgddGMoeS2SUszRcCpk9wl1/exec";
+// تمت إزالة FAMILY_INDEX_WEB_APP_URL لأنه سيتم استخدام google.script.run
 let familiesIndexData = {}; // لتخزين بيانات فهرس العائلات
 
 // ============================================
@@ -44,16 +44,16 @@ function goHome() {
 function showFamily(familyName) {
     const familyData = familiesIndexData[familyName];
     if (!familyData || !familyData.SheetID) {
-        alert('لم يتم العثور على معرف جدول البيانات لهذه العائلة.');
+        alert('لم يتم العثور على اسم ورقة العمل لهذه العائلة.');
         return;
     }
 
-    // التوجيه إلى صفحة العائلة مع تمرير SheetID واسم العائلة في URL
+    // التوجيه إلى صفحة العائلة مع تمرير SheetName واسم العائلة في URL
     const url = `family_mazher_new/index.html?sheetName=${familyData.SheetID}&familyName=${encodeURIComponent(familyName)}`;
     window.location.href = url;
 }
 
-// تحميل وعرض فهرس العائلات
+// تحميل وعرض فهرس العائلات باستخدام google.script.run
 function loadFamiliesIndex(isAdminMode = false) {
     const gridId = isAdminMode ? 'adminFamiliesGrid' : 'familiesGrid';
     const grid = document.getElementById(gridId);
@@ -61,9 +61,8 @@ function loadFamiliesIndex(isAdminMode = false) {
 
     grid.innerHTML = '<p style="text-align: center;">جاري تحميل قائمة العائلات...</p>';
 
-    fetch(`${FAMILY_INDEX_WEB_APP_URL}?action=getFamilies`)
-        .then(response => response.json())
-        .then(data => {
+    google.script.run
+        .withSuccessHandler(function(data) {
             if (data.success) {
                 familiesIndexData = data.families;
                 updateFamiliesUI(isAdminMode);
@@ -71,10 +70,11 @@ function loadFamiliesIndex(isAdminMode = false) {
                 throw new Error(data.error || 'فشل تحميل البيانات.');
             }
         })
-        .catch(error => {
+        .withFailureHandler(function(error) {
             console.error('Error loading families index:', error);
-            grid.innerHTML = `<p style="color: red; text-align: center;">${error.message}</p>`;
-        });
+            grid.innerHTML = `<p style="color: red; text-align: center;">خطأ في تحميل البيانات: ${error}</p>`;
+        })
+        .getFamilies();
 }
 
 // تحديث واجهة المستخدم ببطاقات العائلات
@@ -130,18 +130,19 @@ function closeLoginModal() {
     if (modal) modal.style.display = 'none';
 }
 
+// دالة تسجيل الدخول تستخدم Fetch API لأنها تتصل بـ /api/auth
 async function handleLogin(event) {
-	    event.preventDefault();
-	    const username = document.getElementById('username').value;
-	    const password = document.getElementById('password').value;
-	    const errorDiv = document.getElementById('loginError');
-	
-	    try {
-	        const response = await fetch('/api/auth', {
-	            method: 'POST',
-	            headers: { 'Content-Type': 'application/json' },
-	            body: JSON.stringify({ username, password })
-	        });
+    event.preventDefault();
+    const username = document.getElementById('username').value;
+    const password = document.getElementById('password').value;
+    const errorDiv = document.getElementById('loginError');
+
+    try {
+        const response = await fetch('/api/auth', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ username, password })
+        });
 
         const result = await response.json();
 
@@ -186,42 +187,35 @@ function updateLoginState() {
 }
 
 // ============================================
-// 5. إدارة نافذة إضافة/تعديل العائلة
+// 5. إدارة نافذة إضافة/تعديل/حذف العائلة
 // ============================================
 
 function openDeleteFamilyModal() {
     const familyName = prompt("أدخل اسم العائلة التي تريد حذفها بالضبط:");
     if (familyName) {
-        if (confirm(`هل أنت متأكد من حذف عائلة "${familyName}"؟ لا يمكن التراجع عن هذا الإجراء.`)) {
+        if (confirm(`هل أنت متأكد من حذف عائلة "${familyName}"؟ سيتم حذف ورقة العمل الخاصة بها.`)) {
             deleteFamily(familyName);
         }
     }
 }
 
-async function deleteFamily(familyName) {
-    const familyData = {
-        action: 'deleteFamily',
-        familyName: familyName
-    };
-
-    try {
-        const response = await fetch(FAMILY_INDEX_WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(familyData)
-        });
-
-        alert(`تم إرسال طلب حذف عائلة "${familyName}".`);
-        loadFamiliesIndex(true); // Refresh the admin list
-
-    } catch (error) {
-        console.error('Error submitting delete family data:', error);
-        alert('حدث خطأ أثناء إرسال طلب الحذف.');
-    }
+// حذف عائلة باستخدام google.script.run
+function deleteFamily(familyName) {
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                alert(response.message);
+                loadFamiliesIndex(true); // Refresh the admin list
+            } else {
+                alert(`فشل حذف العائلة: ${response.message}`);
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('Error submitting delete family data:', error);
+            alert('حدث خطأ أثناء إرسال طلب الحذف.');
+        })
+        .deleteFamily({ familyName: familyName });
 }
-
-// ============================================
-// ============================================
 
 function openFamilyModal(mode, familyName = null) {
     const modal = document.getElementById('familyModal');
@@ -232,12 +226,14 @@ function openFamilyModal(mode, familyName = null) {
     form.dataset.mode = mode;
     form.dataset.oldFamilyName = familyName || '';
 
+    // إخفاء حقل SheetID لأنه لم يعد مستخدماً في الواجهة الأمامية
+    document.getElementById('familySheetIdGroup').style.display = 'none';
+
     if (mode === 'edit' && familyName && familiesIndexData[familyName]) {
         modalTitle.textContent = 'تعديل بيانات العائلة';
         const family = familiesIndexData[familyName];
         document.getElementById('familyName').value = family.FamilyName;
         document.getElementById('familyDescription').value = family.Description;
-        document.getElementById('familySheetId').value = family.SheetID;
         document.getElementById('familyIcon').value = family.Icon;
     } else {
         modalTitle.textContent = 'إضافة عائلة جديدة';
@@ -250,7 +246,8 @@ function closeFamilyModal() {
     document.getElementById('familyModal').style.display = 'none';
 }
 
-async function handleFamilySubmit(event) {
+// إضافة/تعديل عائلة باستخدام google.script.run
+function handleFamilySubmit(event) {
     event.preventDefault();
     const form = event.target;
     const mode = form.dataset.mode;
@@ -258,30 +255,29 @@ async function handleFamilySubmit(event) {
 
     const familyData = {
         action: mode === 'edit' ? 'editFamily' : 'addFamily',
-        familyName: document.getElementById('familyNewName').value,
+        familyName: document.getElementById('familyName').value,
         description: document.getElementById('familyDescription').value,
-        sheetId: document.getElementById('familySheetID').value,
         icon: document.getElementById('familyIcon').value,
         oldFamilyName: oldFamilyName
     };
 
-    try {
-        const response = await fetch(FAMILY_INDEX_WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors', // Required for cross-origin requests
-            body: JSON.stringify(familyData)
-        });
+    const scriptFunction = mode === 'edit' ? 'editFamily' : 'addFamily';
 
-        // Note: Apps Script web apps often return a redirect, so we can't always parse JSON.
-        // We will reload the families list regardless of the direct response.
-        alert(mode === 'edit' ? 'تم إرسال طلب التعديل بنجاح.' : 'تم إرسال طلب الإضافة بنجاح.');
-        closeFamilyModal();
-        loadFamiliesIndex(true); // Refresh the admin list
-
-    } catch (error) {
-        console.error('Error submitting family data:', error);
-        alert('حدث خطأ أثناء إرسال البيانات.');
-    }
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                alert(response.message);
+                closeFamilyModal();
+                loadFamiliesIndex(true); // Refresh the admin list
+            } else {
+                alert(`فشل العملية: ${response.message}`);
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('Error submitting family data:', error);
+            alert('حدث خطأ أثناء إرسال البيانات.');
+        })
+        [scriptFunction](familyData);
 }
 
 // ============================================
