@@ -168,6 +168,85 @@ function createFamilyTable(data, isEditable = false) {
 // دوال صفحة آل مزهر (Google Apps Script)
 // ============================================
 
+// ============================================
+// 4. تحميل فهرس العائلات (حل المشكلة)
+// ============================================
+
+function loadFamiliesIndex() {
+    const grid = document.getElementById('adminFamiliesGrid');
+    if (grid) {
+        grid.innerHTML = '<p style="text-align: center;">جاري تحميل قائمة العائلات...</p>';
+    }
+
+    // استدعاء الرابط بالطريقة الصحيحة مع إضافة الباراميتر
+    fetch(FAMILY_INDEX_WEB_APP_URL + "?action=getFamilies")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                familiesIndexData = data.families; // حفظ البيانات
+                updateAdminUI();
+                console.log("تم تحميل فهرس العائلات بنجاح:", familiesIndexData);
+            } else {
+                console.error("خطأ من السكربت:", data.error);
+                if (grid) {
+                    grid.innerHTML = `<p style="color: red; text-align: center;">فشل تحميل قائمة العائلات: ${data.error}</p>`;
+                }
+                alert("خطأ في تحميل البيانات. تأكد من رابط Google Apps Script.");
+            }
+        })
+        .catch(error => {
+            console.error('خطأ في fetch:', error);
+            if (grid) {
+                grid.innerHTML = `<p style="color: red; text-align: center;">حدث خطأ فني أثناء الاتصال بالخادم.</p>`;
+            }
+            alert("حدث خطأ فني أثناء محاولة جلب البيانات. تأكد من الرابط واتصالك بالإنترنت.");
+        });
+}
+
+function updateAdminUI() {
+    const familiesGrid = document.getElementById('adminFamiliesGrid');
+    if (!familiesGrid) return;
+    
+    familiesGrid.innerHTML = ''; // مسح المحتوى السابق
+
+    const familyNames = Object.keys(familiesIndexData);
+
+    if (familyNames.length === 0) {
+        familiesGrid.innerHTML = '<p style="text-align: center;">لم يتم العثور على عائلات.</p>';
+        return;
+    }
+
+    familyNames.forEach(familyName => {
+        const familyInfo = familiesIndexData[familyName];
+        const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        const card = document.createElement('div');
+        card.className = 'family-card';
+        card.style.background = `linear-gradient(135deg, ${randomColor}, #1e293b)`;
+        card.innerHTML = `
+            <div class="family-card-icon" style="background: ${randomColor};">
+                <i class="${familyInfo.Icon || 'fas fa-users'}" style="color: white;"></i>
+            </div>
+            <h4>${familyInfo.FamilyName}</h4>
+            <p>${familyInfo.Description || `إدارة وتعديل بيانات عائلة ${familyInfo.FamilyName}`}</p>
+            <button class="btn-primary" onclick="showFamily('${familyInfo.FamilyName}', true)">
+                <i class="fas fa-cogs"></i> تحكم كامل
+            </button>
+        `;
+        familiesGrid.appendChild(card);
+    });
+}
+
+// ============================================
+// دوال صفحة آل مزهر (Google Apps Script)
+// ============================================
+
 // متغيرات عامة لصفحة آل مزهر
 let mazharTableData = [];
 let mazharYears = [];
@@ -179,6 +258,9 @@ const MAZHAR_SHEET_ID = "1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc";
 const MAZHAR_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYrKD_o_QNgeaM36P78HbBDfPtqyAD-UX066lcKaVIP6paNvjhYDg/exec";
 
 const FAMILY_INDEX_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8pgbJnIaNbbmNFxQK4C2cqFYuTLYOhH56lNzOsaQ2QdgddGMoeS2SUszRcCpk9wl1/exec";
+
+// متغير لتخزين بيانات فهرس العائلات
+let familiesIndexData = {};
 
 function mazhar_init(isAdminMode) {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
@@ -837,21 +919,24 @@ function handleLogout() {
 }
 
 function showAdminPanel() {
+  function showAdminPanel() {
     showPage('adminPage');
     document.getElementById('adminNav').style.display = 'block';
     
     const username = localStorage.getItem('username') || 'المشرف';
-    
-    // إضافة بطاقات العائلات إلى لوحة الإدارة
     const adminContent = document.querySelector('#adminPage .admin-content');
     adminContent.innerHTML = `
         <p style="font-size: 1.2rem; font-weight: 600;">مرحباً بك يا ${username}! 👋</p>
         <p>أنت الآن في منطقة الإدارة. يمكنك التحكم الكامل في بيانات العائلات.</p>
         <p style="margin-top: 20px;">اختر العائلة التي تريد تعديل بياناتها:</p>
         <div class="families-grid" id="adminFamiliesGrid">
-            <!-- سيتم ملء البطاقات هنا -->
+            <!-- سيتم ملء البطاقات هنا بواسطة JavaScript -->
         </div>
     `;
+    
+    // استدعاء دالة تحميل فهرس العائلات عند فتح لوحة المشرف
+    loadFamiliesIndex();
+};
     
     const familiesGrid = document.getElementById('adminFamiliesGrid');
     const familyNames = Object.keys(familiesData);
