@@ -175,8 +175,10 @@ let mazharEditingCell = { row: null, col: null };
 let mazharEditingName = { row: null };
 let mazharEditingYear = { col: null };
 
-const MAZHAR_SHEET_ID = "12kdh41FzmZAS-8fgTm5LyqpwlCMWVg-jG9KcJiirLxA";
-const MAZHAR_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8pgbJnIaNbbmNFxQK4C2cqFYuTLYOhH56lNzOsaQ2QdgddGMoeS2SUszRcCpk9wl1/exec";
+const MAZHAR_SHEET_ID = "1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc";
+const MAZHAR_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYrKD_o_QNgeaM36P78HbBDfPtqyAD-UX066lcKaVIP6paNvjhYDg/exec";
+
+const FAMILY_INDEX_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8pgbJnIaNbbmNFxQK4C2cqFYuTLYOhH56lNzOsaQ2QdgddGMoeS2SUszRcCpk9wl1/exec";
 
 function mazhar_init(isAdminMode) {
     const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
