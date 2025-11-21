@@ -133,13 +133,20 @@ function addFamily(data) {
     const newSpreadsheet = SpreadsheetApp.create(`بيانات عائلة ${familyName}`);
     sheetId = newSpreadsheet.getId();
     
-    // 2. إعداد الهيكل الأساسي لجدول البيانات الجديد
-    const newSheet = newSpreadsheet.getSheets()[0];
-    newSheet.setName('البيانات');
-    
-    // إضافة صف الرؤوس (يفترض أن الصف الأول هو لسنوات البيانات)
-    // يمكنك تعديل هذا حسب الهيكل الفعلي لبيانات العائلة
-    newSheet.appendRow(['الاسم', '2020', '2021', '2022', '2023', '2024']);
+// 2. إعداد الهيكل الأساسي لجدول البيانات الجديد
+	    const newSheet = newSpreadsheet.getSheets()[0];
+	    newSheet.setName('البيانات');
+	    
+	    // إعداد الرؤوس: الاسم، ثم أزواج (السنة - الحالة، السنة - الملاحظة)
+	    const headers = ['الاسم', '2023', '2023', '2024', '2024'];
+	    newSheet.getRange(1, 1, 1, headers.length).setValues([headers]);
+	    
+	    // تنسيق الصف الأول
+	    const headerRange = newSheet.getRange(1, 1, 1, headers.length);
+	    headerRange.setBackground("#4472C4");
+	    headerRange.setFontColor("#FFFFFF");
+	    headerRange.setFontWeight("bold");
+	    headerRange.setHorizontalAlignment("center");
     
     // 3. إضافة صف جديد في فهرس العائلات مع SheetID الجديد
     sheet.appendRow([familyName, description, sheetId, icon]);

@@ -42,19 +42,15 @@ function goHome() {
 
 // عرض صفحة عائلة محددة
 function showFamily(familyName) {
-    // const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true'; // تم إزالة التعريف المكرر
     const familyData = familiesIndexData[familyName];
     if (!familyData || !familyData.SheetID) {
         alert('لم يتم العثور على معرف جدول البيانات لهذه العائلة.');
         return;
     }
 
-    // هنا يمكنك بناء صفحة العائلة ديناميكياً أو الانتقال إلى صفحة مخصصة
-    // في هذا المثال، سنقوم فقط بعرض رسالة
-    alert(`جاري عرض بيانات عائلة: ${familyName}\nSheet ID: ${familyData.SheetID}`);
-    
-    // مثال على كيفية استدعاء دالة لجلب بيانات العائلة المحددة
-    // loadSpecificFamilyData(familyData.SheetID);
+    // التوجيه إلى صفحة العائلة مع تمرير SheetID واسم العائلة في URL
+    const url = `family_mazher_new/index.html?sheetId=${familyData.SheetID}&familyName=${encodeURIComponent(familyName)}`;
+    window.location.href = url;
 }
 
 // تحميل وعرض فهرس العائلات

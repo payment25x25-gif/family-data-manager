@@ -3,7 +3,7 @@
 <head>\n    <link href="https://fonts.googleapis.com/css2?family=Tajawal:wght@400;700&display=swap" rel="stylesheet">
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>مدير بيانات عائلة آل بن صالح</title>
+    <title id="familyPageTitle">مدير بيانات العائلة</title>
     <link rel="stylesheet" href="styles.css">\n    <link rel="stylesheet" href="new_style.css">
 </head>
 <body>
@@ -11,8 +11,8 @@
         <!-- رأس الصفحة -->
         <header class="header">
             <div class="header-content">
-                <h1>📊 مدير بيانات عائلة آل بن صالح</h1>
-                <button class="btn btn-secondary1" onclick="window.location.href = '../index.html'">🏠 الرئيسية</button>
+                <h1 id="familyHeaderTitle">📊 مدير بيانات العائلة</h1>
+                <button class="btn btn-secondary1" onclick="goBackToHome()">🏠 الرئيسية</button>
             </div>
             <div class="header-actions">
                 <button class="btn btn-primary" id="btnAddPersonHeader" onclick="openAddPersonModal()">➕ إضافة شخص</button>
@@ -101,7 +101,7 @@
     <div id="editCellModal" class="modal">
         <div class="modal-content">
             <div class="modal-header">
-                <h2>تعديل البيانات</h2>
+                <h2>تعديل بيانات المشاركة والملاحظة</h2>
                 <button class="close-btn" onclick="closeEditCellModal()">&times;</button>
             </div>
             <div class="modal-body">
@@ -110,18 +110,22 @@
                     <label>السنة: <span id="editYearValue"></span></label>
                 </div>
                 <div class="form-group">
-                    <label for="editCellValue">اختر أو أدخل القيمة:</label>
-                    <div class="edit-options">
-                        <button class="option-btn" onclick="setEditValue('مشارك')">✅ مشارك</button>
-                        <button class="option-btn" onclick="setEditValue('X')">❌ X</button>
-                        <button class="option-btn" onclick="setEditValue('-')">⚪ -</button>
-                    </div>
-                    <input type="text" id="editCellValue" placeholder="أو أدخل قيمة مخصصة...">
+                    <label>حالة المشاركة:</label>
+<div class="edit-options">
+	                        <button class="option-btn" data-value="مشارك" onclick="setParticipationStatus('مشارك')">✅ مشارك</button>
+	                        <button class="option-btn" data-value="X" onclick="setParticipationStatus('X')">❌ X</button>
+	                        <button class="option-btn" data-value="-" onclick="setParticipationStatus('-')">⚪ -</button>
+	                    </div>
+	                    <input type="hidden" id="editParticipationStatus">
+	                </div>
+	                <div class="form-group">
+	                    <label for="editNoteValue">الملاحظة (اختياري):</label>
+	                    <textarea id="editNoteValue" rows="3" placeholder="أدخل أي ملاحظات إضافية"></textarea>
                 </div>
             </div>
             <div class="modal-footer">
                 <button class="btn btn-secondary" onclick="closeEditCellModal()">إلغاء</button>
-                <button class="btn btn-primary" onclick="saveEditCell()">حفظ</button>
+                <button class="btn btn-primary" onclick="saveEditCell()">حفظ التعديلات</button>
             </div>
         </div>
     </div>
