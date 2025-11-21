@@ -7,9 +7,8 @@ let editingCell = { row: null, col: null }; // col here is the year index (0, 1,
 let editingName = { row: null };
 let editingYear = { col: null };
 
-let SHEET_ID = ""; // سيتم تعيينه من URL
+let SHEET_NAME = ""; // سيتم تعيينه من URL
 let FAMILY_NAME = ""; // سيتم تعيينه من URL
-const WEB_APP_URL = "YOUR_WEB_APP_URL_HERE"; // يجب استبدال هذا برابط Web App الجديد بعد نشر Code.gs
 
 // ============================================
 // دوال مساعدة
@@ -17,7 +16,7 @@ const WEB_APP_URL = "YOUR_WEB_APP_URL_HERE"; // يجب استبدال هذا ب�
 
 function getUrlParams() {
     const params = new URLSearchParams(window.location.search);
-    SHEET_ID = params.get('sheetName') || "";
+    SHEET_NAME = params.get('sheetName') || "";
     FAMILY_NAME = decodeURIComponent(params.get('familyName') || "بيانات العائلة");
 }
 
@@ -30,7 +29,7 @@ function goBackToHome() {
 // ============================================
 document.addEventListener('DOMContentLoaded', function() {
     getUrlParams();
-    if (!SHEET_ID) {
+    if (!SHEET_NAME) {
         alert('خطأ: لم يتم تحديد اسم ورقة العمل (Sheet Name). سيتم توجيهك للصفحة الرئيسية.');
         goBackToHome();
         return;
@@ -63,27 +62,27 @@ function checkAdminStatus() {
 }
 
 // ============================================
-// تحميل البيانات من Google Sheet
+// تحميل البيانات من Google Sheet باستخدام google.script.run
 // ============================================
 function loadData() {
     showNotification('جاري تحميل البيانات...', 'info');
     
-    fetch(`${WEB_APP_URL}?action=getData&sheetName=${SHEET_ID}`)
-        .then(response => response.json())
-        .then(data => {
+    google.script.run
+        .withSuccessHandler(function(data) {
             if (data.success) {
                 tableData = data.data || [];
                 years = data.years || [];
                 renderTable();
                 showNotification('تم تحميل البيانات بنجاح ✓', 'success');
             } else {
-                throw new Error(data.error || 'فشل تحميل البيانات.');
+                showNotification(`خطأ في تحميل البيانات: ${data.error || 'فشل غير معروف'}`, 'error');
             }
         })
-        .catch(error => {
-            console.error('خطأ:', error);
-            showNotification(`خطأ في تحميل البيانات: ${error.message}`, 'error');
-        });
+        .withFailureHandler(function(error) {
+            console.error('خطأ في الاتصال بـ Apps Script:', error);
+            showNotification(`خطأ في تحميل البيانات: فشل الاتصال بالخادم.`, 'error');
+        })
+        .getData(SHEET_NAME);
 }
 
 // ============================================
@@ -274,92 +273,57 @@ function saveEditCell() {
     tableData[editingCell.row][statusColIndex] = status;
     tableData[editingCell.row][noteColIndex] = note;
     
-    // حفظ في Google Sheet
-    updateCell(editingCell.row, statusColIndex, status, noteColIndex, note);
-    
-    closeEditCellModal();
+    // تحديث الواجهة
     renderTable();
-    showNotification('تم تحديث البيانات ✓', 'success');
+    closeEditCellModal();
+    
+    // إرسال التحديث إلى Google Sheet
+    showNotification('جاري حفظ التعديلات...', 'info');
+    
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                showNotification('تم حفظ التعديلات بنجاح ✓', 'success');
+            } else {
+                showNotification(`فشل حفظ التعديلات: ${response.message}`, 'error');
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('خطأ في الاتصال بـ Apps Script:', error);
+            showNotification(`فشل حفظ التعديلات: خطأ في الاتصال بالخادم.`, 'error');
+        })
+        .updateCell(SHEET_NAME, editingCell.row, statusColIndex + 1, status, noteColIndex + 1, note); // +1 لتحويلها إلى 1-indexed
 }
 
 // ============================================
-// فتح مودال إضافة شخص جديد
+// إضافة شخص جديد
 // ============================================
-function openAddPersonModal() {
+function handleAddPerson() {
     if (!checkAdminStatus()) return;
-    document.getElementById('addPersonModal').classList.add('show');
-    document.getElementById('personName').focus();
-}
-
-function closeAddPersonModal() {
-    document.getElementById('addPersonModal').classList.remove('show');
-    document.getElementById('personName').value = '';
-}
-
-function addNewPerson() {
-    const personName = document.getElementById('personName').value.trim();
+    
+    const personName = document.getElementById('newPersonName').value.trim();
     if (!personName) {
         showNotification('الرجاء إدخال اسم الشخص', 'warning');
         return;
     }
     
-    // إنشاء صف جديد بالاسم والقيم الافتراضية
-    const newRow = [personName];
-    for (let i = 0; i < years.length; i++) {
-        newRow.push('-'); // الحالة الافتراضية
-        newRow.push(''); // الملاحظة الافتراضية
-    }
+    showNotification('جاري إضافة الشخص...', 'info');
     
-    tableData.push(newRow);
-    
-    // حفظ في Google Sheet
-    addPerson(personName);
-    
-    closeAddPersonModal();
-    renderTable();
-    showNotification(`تم إضافة ${personName} ✓`, 'success');
-}
-
-// ============================================
-// فتح مودال إضافة سنة جديدة
-// ============================================
-function openAddYearModal() {
-    if (!checkAdminStatus()) return;
-    document.getElementById('addYearModal').classList.add('show');
-    document.getElementById('yearInput').focus();
-}
-
-function closeAddYearModal() {
-    document.getElementById('addYearModal').classList.remove('show');
-    document.getElementById('yearInput').value = '';
-}
-
-function addNewYear() {
-    const year = document.getElementById('yearInput').value.trim();
-    if (!year) {
-        showNotification('الرجاء إدخال السنة', 'warning');
-        return;
-    }
-    
-    if (years.includes(year)) {
-        showNotification('هذه السنة موجودة بالفعل', 'warning');
-        return;
-    }
-    
-    years.push(year);
-    
-    // إضافة عمودين (الحالة والملاحظة) لكل صف
-    tableData.forEach(row => {
-        row.push('-'); // الحالة الافتراضية
-        row.push(''); // الملاحظة الافتراضية
-    });
-    
-    // حفظ في Google Sheet
-    addYear(year);
-    
-    closeAddYearModal();
-    renderTable();
-    showNotification(`تم إضافة سنة ${year} ✓`, 'success');
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                document.getElementById('newPersonName').value = '';
+                loadData(); // إعادة تحميل البيانات لتحديث الجدول
+                showNotification('تم إضافة الشخص بنجاح ✓', 'success');
+            } else {
+                showNotification(`فشل إضافة الشخص: ${response.message}`, 'error');
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('خطأ في الاتصال بـ Apps Script:', error);
+            showNotification(`فشل إضافة الشخص: خطأ في الاتصال بالخادم.`, 'error');
+        })
+        .addPerson(SHEET_NAME, personName);
 }
 
 // ============================================
@@ -369,9 +333,8 @@ function openEditNameModal(row, currentName) {
     if (!checkAdminStatus()) return;
     
     editingName = { row };
-    document.getElementById('editNameValue').value = currentName;
+    document.getElementById('editNameInput').value = currentName;
     document.getElementById('editNameModal').classList.add('show');
-    document.getElementById('editNameValue').focus();
 }
 
 // ============================================
@@ -379,118 +342,172 @@ function openEditNameModal(row, currentName) {
 // ============================================
 function closeEditNameModal() {
     document.getElementById('editNameModal').classList.remove('show');
-    document.getElementById('editNameValue').value = '';
 }
 
 // ============================================
 // حفظ تعديل الاسم
 // ============================================
 function saveEditName() {
-    const newName = document.getElementById('editNameValue').value.trim();
-    
+    const newName = document.getElementById('editNameInput').value.trim();
     if (!newName) {
-        showNotification('الرجاء إدخال اسم', 'warning');
+        showNotification('الرجاء إدخال اسم جديد', 'warning');
         return;
     }
     
-    const oldName = tableData[editingName.row][0];
-    tableData[editingName.row][0] = newName;
+    showNotification('جاري حفظ الاسم الجديد...', 'info');
     
-    // حفظ في Google Sheet
-    updateName(editingName.row, newName);
-    
-    closeEditNameModal();
-    renderTable();
-    showNotification(`تم تحديث الاسم من ${oldName} إلى ${newName} ✓`, 'success');
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                tableData[editingName.row][0] = newName;
+                renderTable();
+                closeEditNameModal();
+                showNotification('تم تحديث الاسم بنجاح ✓', 'success');
+            } else {
+                showNotification(`فشل تحديث الاسم: ${response.message}`, 'error');
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('خطأ في الاتصال بـ Apps Script:', error);
+            showNotification(`فشل تحديث الاسم: خطأ في الاتصال بالخادم.`, 'error');
+        })
+        .updateName(SHEET_NAME, editingName.row, newName);
 }
 
 // ============================================
-// حذف صف الشخص
+// حذف شخص
 // ============================================
-function deletePersonRow() {
-    if (confirm('هل أنت متأكد من حذف هذا الشخص؟')) {
-        const personName = tableData[editingName.row][0];
-        tableData.splice(editingName.row, 1);
-        deletePerson(editingName.row);
-        closeEditNameModal();
-        renderTable();
-        showNotification(`تم حذف الشخص ${personName} ✓`, 'success');
-    }
+function deletePersonHandler() {
+    if (!confirm(`هل أنت متأكد من حذف ${tableData[editingName.row][0]}؟`)) return;
+    
+    showNotification('جاري حذف الشخص...', 'info');
+    
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                loadData(); // إعادة تحميل البيانات لتحديث الجدول
+                closeEditNameModal();
+                showNotification('تم حذف الشخص بنجاح ✓', 'success');
+            } else {
+                showNotification(`فشل حذف الشخص: ${response.message}`, 'error');
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('خطأ في الاتصال بـ Apps Script:', error);
+            showNotification(`فشل حذف الشخص: خطأ في الاتصال بالخادم.`, 'error');
+        })
+        .deletePerson(SHEET_NAME, editingName.row);
 }
 
 // ============================================
-// فتح مودال تعديل السنة
+// فتح مودال تعديل رأس السنة
 // ============================================
 function openEditYearHeaderModal(col, currentYear) {
     if (!checkAdminStatus()) return;
     
     editingYear = { col };
-    document.getElementById('editYearHeaderValue').value = currentYear;
-    document.getElementById('editYearHeaderModal').classList.add('show');
-    document.getElementById('editYearHeaderValue').focus();
+    document.getElementById('editYearInput').value = currentYear;
+    document.getElementById('editYearModal').classList.add('show');
 }
 
 // ============================================
-// إغلاق مودال تعديل السنة
+// إغلاق مودال تعديل رأس السنة
 // ============================================
-function closeEditYearHeaderModal() {
-    document.getElementById('editYearHeaderModal').classList.remove('show');
-    document.getElementById('editYearHeaderValue').value = '';
+function closeEditYearModal() {
+    document.getElementById('editYearModal').classList.remove('show');
 }
 
 // ============================================
-// حفظ تعديل السنة
+// حفظ تعديل رأس السنة
 // ============================================
-function saveEditYearHeader() {
-    const newYear = document.getElementById('editYearHeaderValue').value.trim();
-    
+function saveEditYear() {
+    const newYear = document.getElementById('editYearInput').value.trim();
     if (!newYear) {
-        showNotification('الرجاء إدخال السنة', 'warning');
+        showNotification('الرجاء إدخال سنة جديدة', 'warning');
         return;
     }
     
-    const oldYear = years[editingYear.col];
-    years[editingYear.col] = newYear;
-    updateYear(editingYear.col, newYear);
+    showNotification('جاري حفظ السنة الجديدة...', 'info');
     
-    closeEditYearHeaderModal();
-    renderTable();
-    showNotification(`تم تحديث السنة من ${oldYear} إلى ${newYear} ✓`, 'success');
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                years[editingYear.col] = newYear;
+                renderTable();
+                closeEditYearModal();
+                showNotification('تم تحديث السنة بنجاح ✓', 'success');
+            } else {
+                showNotification(`فشل تحديث السنة: ${response.message}`, 'error');
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('خطأ في الاتصال بـ Apps Script:', error);
+            showNotification(`فشل تحديث السنة: خطأ في الاتصال بالخادم.`, 'error');
+        })
+        .updateYear(SHEET_NAME, editingYear.col, newYear);
 }
 
 // ============================================
-// حذف عمود السنة
+// حذف سنة
 // ============================================
-function deleteYearColumn() {
-    if (confirm('هل أنت متأكد من حذف عمود هذه السنة بالكامل؟')) {
-        const year = years[editingYear.col];
-        
-        // حذف السنة من مصفوفة السنوات
-        years.splice(editingYear.col, 1);
-        
-        // حذف عمودي الحالة والملاحظة من كل صف بيانات
-        const statusColIndex = 1 + (editingYear.col * 2);
-        
-        tableData.forEach(row => {
-            row.splice(statusColIndex, 2);
-        });
-        
-        // حفظ في Google Sheet
-        deleteYear(editingYear.col);
-        
-        closeEditYearHeaderModal();
-        renderTable();
-        showNotification(`تم حذف سنة ${year} ✓`, 'success');
+function deleteYearHandler() {
+    if (!confirm(`هل أنت متأكد من حذف سنة ${years[editingYear.col]}؟ سيتم حذف عمودي الحالة والملاحظة المرتبطين بها.`)) return;
+    
+    showNotification('جاري حذف السنة...', 'info');
+    
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                loadData(); // إعادة تحميل البيانات لتحديث الجدول
+                closeEditYearModal();
+                showNotification('تم حذف السنة بنجاح ✓', 'success');
+            } else {
+                showNotification(`فشل حذف السنة: ${response.message}`, 'error');
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('خطأ في الاتصال بـ Apps Script:', error);
+            showNotification(`فشل حذف السنة: خطأ في الاتصال بالخادم.`, 'error');
+        })
+        .deleteYear(SHEET_NAME, editingYear.col);
+}
+
+// ============================================
+// إضافة سنة جديدة من رأس الصفحة
+// ============================================
+function handleAddYear() {
+    if (!checkAdminStatus()) return;
+    
+    const newYear = prompt('الرجاء إدخال السنة الجديدة (مثال: 1445):');
+    if (!newYear || newYear.trim() === '') {
+        return;
     }
+    
+    showNotification('جاري إضافة السنة...', 'info');
+    
+    google.script.run
+        .withSuccessHandler(function(response) {
+            if (response.success) {
+                loadData(); // إعادة تحميل البيانات لتحديث الجدول
+                showNotification('تم إضافة السنة بنجاح ✓', 'success');
+            } else {
+                showNotification(`فشل إضافة السنة: ${response.message}`, 'error');
+            }
+        })
+        .withFailureHandler(function(error) {
+            console.error('خطأ في الاتصال بـ Apps Script:', error);
+            showNotification(`فشل إضافة السنة: خطأ في الاتصال بالخادم.`, 'error');
+        })
+        .addYear(SHEET_NAME, newYear);
 }
 
 // ============================================
-// إشعارات
+// دالة عرض الإشعارات
 // ============================================
 function showNotification(message, type = 'info', duration = 3000) {
     const notification = document.getElementById('notification');
     notification.textContent = message;
-    notification.className = `notification show ${type}`;
+    notification.className = `notification ${type} show`;
     
     setTimeout(() => {
         notification.classList.remove('show');
@@ -498,227 +515,8 @@ function showNotification(message, type = 'info', duration = 3000) {
 }
 
 // ============================================
-// وظائف الاتصال بـ Google Apps Script
-// ============================================
-
-// تحديث خلية (الحالة والملاحظة)
-async function updateCell(rowIndex, statusColIndex, status, noteColIndex, note) {
-    const data = {
-        action: 'updateCell',
-        sheetName: SHEET_ID,
-        rowIndex: rowIndex + 1, // +1 لتعويض صف الرؤوس
-        statusColIndex: statusColIndex + 1, // +1 لتعويض عمود الاسم
-        status: status,
-        noteColIndex: noteColIndex + 1, // +1 لتعويض عمود الاسم
-        note: note
-    };
-    
-    try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(data)
-        });
-    } catch (error) {
-        console.error('Error updating cell:', error);
-        showNotification('فشل تحديث الخلية في Google Sheet', 'error');
-    }
-}
-
-// إضافة شخص
-async function addPerson(personName) {
-    const data = {
-        action: 'addPerson',
-        sheetName: SHEET_ID,
-        personName: personName
-    };
-    
-    try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(data)
-        });
-    } catch (error) {
-        console.error('Error adding person:', error);
-        showNotification('فشل إضافة الشخص في Google Sheet', 'error');
-    }
-}
-
-// حذف شخص
-async function deletePerson(rowIndex) {
-    const data = {
-        action: 'deletePerson',
-        sheetName: SHEET_ID,
-        rowIndex: rowIndex + 1 // +1 لتعويض صف الرؤوس
-    };
-    
-    try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(data)
-        });
-    } catch (error) {
-        console.error('Error deleting person:', error);
-        showNotification('فشل حذف الشخص من Google Sheet', 'error');
-    }
-}
-
-// تحديث اسم شخص
-async function updateName(rowIndex, newName) {
-    const data = {
-        action: 'updateName',
-        sheetName: SHEET_ID,
-        rowIndex: rowIndex + 1, // +1 لتعويض صف الرؤوس
-        newName: newName
-    };
-    
-    try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(data)
-        });
-    } catch (error) {
-        console.error('Error updating name:', error);
-        showNotification('فشل تحديث الاسم في Google Sheet', 'error');
-    }
-}
-
-// إضافة سنة
-async function addYear(year) {
-    const data = {
-        action: 'addYear',
-        sheetName: SHEET_ID,
-        year: year
-    };
-    
-    try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(data)
-        });
-    } catch (error) {
-        console.error('Error adding year:', error);
-        showNotification('فشل إضافة السنة في Google Sheet', 'error');
-    }
-}
-
-// تحديث سنة
-async function updateYear(yearIndex, newYear) {
-    const data = {
-        action: 'updateYear',
-        sheetName: SHEET_ID,
-        yearIndex: yearIndex + 1, // +1 لتعويض عمود الاسم
-        newYear: newYear
-    };
-    
-    try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(data)
-        });
-    } catch (error) {
-        console.error('Error updating year:', error);
-        showNotification('فشل تحديث السنة في Google Sheet', 'error');
-    }
-}
-
-// حذف سنة
-async function deleteYear(yearIndex) {
-    const data = {
-        action: 'deleteYear',
-        sheetName: SHEET_ID,
-        yearIndex: yearIndex + 1 // +1 لتعويض عمود الاسم
-    };
-    
-    try {
-        await fetch(WEB_APP_URL, {
-            method: 'POST',
-            mode: 'cors',
-            body: JSON.stringify(data)
-        });
-    } catch (error) {
-        console.error('Error deleting year:', error);
-        showNotification('فشل حذف السنة من Google Sheet', 'error');
-    }
-}
-
-// ============================================
-// وظيفة البحث (Filter)
-// ============================================
-function filterTable() {
-    const input = document.getElementById('searchInput');
-    const filter = input.value.toUpperCase();
-    const table = document.getElementById('dataTable');
-    const tr = table.getElementsByTagName('tr');
-    
-    for (let i = 2; i < tr.length; i++) { // البدء من الصف الثالث لتخطي الرؤوس
-        const td = tr[i].getElementsByTagName('td')[1]; // عمود الاسم
-        if (td) {
-            const txtValue = td.textContent || td.innerText;
-            if (txtValue.toUpperCase().indexOf(filter) > -1) {
-                tr[i].style.display = "";
-            } else {
-                tr[i].style.display = "none";
-            }
-        }       
-    }
-}
-
-// ============================================
-// وظيفة تصدير CSV (غير معدلة)
-// ============================================
-function exportToCSV() {
-    let csv = [];
-    
-    // إضافة رؤوس الجدول
-    const headerRow = document.querySelector('.header-row');
-    const subHeadersRow = document.querySelector('.sub-headers-row');
-    
-    let headers = [];
-    headerRow.querySelectorAll('th').forEach(th => {
-        if (th.colSpan > 1) {
-            const year = th.textContent.trim();
-            headers.push(year + ' - الحالة');
-            headers.push(year + ' - الملاحظة');
-        } else {
-            headers.push(th.textContent.trim());
-        }
-    });
-    
-    csv.push(headers.join(','));
-    
-    // إضافة بيانات الجدول
-    tableData.forEach(row => {
-        let rowData = [];
-        row.forEach(cell => {
-            // التعامل مع الفواصل داخل البيانات
-            let cellData = cell === null || cell === undefined ? '' : cell.toString();
-            if (cellData.includes(',')) {
-                cellData = `"${cellData}"`;
-            }
-            rowData.push(cellData);
-        });
-        csv.push(rowData.join(','));
-    });
-
-    // تحميل الملف
-    const csvFile = new Blob([csv.join('\n')], { type: 'text/csv;charset=utf-8;' });
-    const link = document.createElement("a");
-    link.href = URL.createObjectURL(csvFile);
-    link.download = `${FAMILY_NAME}_data.csv`;
-    document.body.appendChild(link);
-    link.click();
-    document.body.removeChild(link);
-}
-
-// ============================================
-// وظيفة حفظ البيانات (غير مستخدمة حالياً)
+// دالة حفظ البيانات (غير مستخدمة حالياً ولكن يمكن استخدامها لحفظ كل شيء دفعة واحدة)
 // ============================================
 function saveData() {
-    showNotification('وظيفة حفظ البيانات غير مطلوبة حالياً، التحديث يتم تلقائياً.', 'info');
+    showNotification('وظيفة حفظ البيانات غير مفعلة حالياً. يتم الحفظ تلقائياً عند التعديل.', 'info');
 }
