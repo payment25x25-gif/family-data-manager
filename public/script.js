@@ -60,6 +60,8 @@ function goHome() {
 }
 
 function showFamily(familyName, isAdminMode = false) {
+    const isLoggedIn = localStorage.getItem('isLoggedIn') === 'true';
+    const isEditable = isAdminMode && isLoggedIn;
     if (familyName === 'آل مزهر') {
         showPage('familyPageMazhar');
         mazhar_init(isAdminMode);
@@ -172,7 +174,49 @@ function createFamilyTable(data, isEditable = false) {
 // 4. تحميل فهرس العائلات (حل المشكلة)
 // ============================================
 
-function loadFamiliesIndex() {
+function loadFamiliesIndex(isAdminMode = false) {
+    const gridId = isAdminMode ? 'adminFamiliesGrid' : 'familiesGrid';
+    const grid = document.getElementById(gridId);
+    const adminControls = document.getElementById('adminControls');
+    
+    // إظهار/إخفاء زر إضافة عائلة في الصفحة الرئيسية
+    if (adminControls) {
+        adminControls.style.display = isAdminMode ? 'flex' : 'none';
+    }
+
+    if (grid) {
+        grid.innerHTML = '<p style="text-align: center;">جاري تحميل قائمة العائلات...</p>';
+    }
+
+    // استدعاء الرابط بالطريقة الصحيحة مع إضافة الباراميتر
+    fetch(FAMILY_INDEX_WEB_APP_URL + "?action=getFamilies")
+        .then(response => {
+            if (!response.ok) {
+                throw new Error('Network response was not ok');
+            }
+            return response.json();
+        })
+        .then(data => {
+            if (data.success) {
+                familiesIndexData = data.families; // حفظ البيانات
+                updateFamiliesUI(isAdminMode);
+                console.log("تم تحميل فهرس العائلات بنجاح:", familiesIndexData);
+            } else {
+                console.error("خطأ من السكربت:", data.error);
+                if (grid) {
+                    grid.innerHTML = `<p style=\"color: red; text-align: center;\">فشل تحميل قائمة العائلات: ${data.error}</p>`;
+                }
+                alert("خطأ في تحميل البيانات. تأكد من رابط Google Apps Script.");
+            }
+        })
+        .catch(error => {
+            console.error('خطأ في fetch:', error);
+            if (grid) {
+                grid.innerHTML = `<p style=\"color: red; text-align: center;\">حدث خطأ فني أثناء الاتصال بالخادم.</p>`;
+            }
+            alert("حدث خطأ فني أثناء محاولة جلب البيانات. تأكد من الرابط واتصالك بالإنترنت.");
+        });
+}
     const grid = document.getElementById('adminFamiliesGrid');
     if (grid) {
         grid.innerHTML = '<p style="text-align: center;">جاري تحميل قائمة العائلات...</p>';
@@ -208,7 +252,60 @@ function loadFamiliesIndex() {
         });
 }
 
-function updateAdminUI() {
+function updateFamiliesUI(isAdminMode = false) {
+    const gridId = isAdminMode ? 'adminFamiliesGrid' : 'familiesGrid';
+    const familiesGrid = document.getElementById(gridId);
+    if (!familiesGrid) return;
+    
+    familiesGrid.innerHTML = ''; // مسح المحتوى السابق
+
+    const familyNames = Object.keys(familiesIndexData);
+
+    if (familyNames.length === 0) {
+        familiesGrid.innerHTML = '<p style="text-align: center;">لم يتم العثور على عائلات.</p>';
+        return;
+    }
+
+    familyNames.forEach(familyName => {
+        const familyInfo = familiesIndexData[familyName];
+        const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
+        const randomColor = colors[Math.floor(Math.random() * colors.length)];
+        
+        const card = document.createElement('div');
+        card.className = 'family-card';
+        card.style.background = `linear-gradient(135deg, ${randomColor}, #1e293b)`;
+        
+        let buttonHTML;
+        if (isAdminMode) {
+            buttonHTML = `
+                <button class="btn-primary" onclick="showFamily('${familyInfo.FamilyName}', true)">
+                    <i class="fas fa-cogs"></i> تحكم كامل
+                </button>
+                <button class="btn-secondary" onclick="openFamilyModal('edit', '${familyInfo.FamilyName}')">
+                    <i class="fas fa-edit"></i> تعديل
+                </button>
+            `;
+        } else {
+            buttonHTML = `
+                <button class="btn-primary" onclick="showFamily('${familyInfo.FamilyName}', false)">
+                    <i class="fas fa-eye"></i> عرض البيانات
+                </button>
+            `;
+        }
+        
+        card.innerHTML = `
+            <div class="family-card-icon" style="background: ${randomColor};">
+                <i class="${familyInfo.Icon || 'fas fa-users'}" style="color: white;"></i>
+            </div>
+            <h4>${familyInfo.FamilyName}</h4>
+            <p>${familyInfo.Description || `بيانات عائلة ${familyInfo.FamilyName}`}</p>
+            <div class="card-actions">
+                ${buttonHTML}
+            </div>
+        `;
+        familiesGrid.appendChild(card);
+    });
+}
     const familiesGrid = document.getElementById('adminFamiliesGrid');
     if (!familiesGrid) return;
     
@@ -255,9 +352,7 @@ let mazharEditingName = { row: null };
 let mazharEditingYear = { col: null };
 
 const MAZHAR_SHEET_ID = "1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc";
-const MAZHAR_WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYrKD_o_QNgeaM36P78HbBDfPtqyAD-UX066lcKaVIP6paNvjhYDg/exec";
-
-const FAMILY_INDEX_WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8pgbJnIaNbbmNFxQK4C2cqFYuTLYOhH56lNzOsaQ2QdgddGMoeS2SUszRcCpk9wl1/exec";
+const MAZ<ctrl42>call:default_api:file{action:
 
 // متغير لتخزين بيانات فهرس العائلات
 let familiesIndexData = {};
@@ -831,6 +926,107 @@ function deleteRow(index) {
 // 4. إدارة تسجيل الدخول (النافذة المنبثقة - Modal)
 // ============================================
 
+// ============================================
+// 5. إدارة العائلات (إضافة/تعديل)
+// ============================================
+
+function openFamilyModal(mode, familyName = null) {
+    const modal = document.getElementById('familyModal');
+    const title = document.getElementById('familyModalTitle');
+    const submitButton = document.getElementById('familySubmitButton');
+    const oldNameInput = document.getElementById('familyOldName');
+    const form = document.getElementById('familyForm');
+
+    form.reset(); // مسح الحقول
+
+    if (mode === 'add') {
+        title.textContent = 'إضافة عائلة جديدة';
+        submitButton.textContent = 'إضافة';
+        oldNameInput.value = '';
+    } else if (mode === 'edit' && familyName) {
+        title.textContent = `تعديل بيانات عائلة ${familyName}`;
+        submitButton.textContent = 'حفظ التعديلات';
+        oldNameInput.value = familyName;
+        
+        // ملء الحقول ببيانات العائلة الحالية
+        const familyInfo = familiesIndexData[familyName];
+        if (familyInfo) {
+            document.getElementById('familyNewName').value = familyInfo.FamilyName;
+            document.getElementById('familyDescription').value = familyInfo.Description;
+            document.getElementById('familySheetID').value = familyInfo.SheetID;
+            document.getElementById('familyIcon').value = familyInfo.Icon;
+        }
+    }
+
+    modal.style.display = 'block';
+}
+
+function closeFamilyModal() {
+    document.getElementById('familyModal').style.display = 'none';
+}
+
+async function handleFamilySubmit(event) {
+    event.preventDefault();
+    
+    const oldFamilyName = document.getElementById('familyOldName').value;
+    const familyNewName = document.getElementById('familyNewName').value;
+    const familyDescription = document.getElementById('familyDescription').value;
+    const familySheetID = document.getElementById('familySheetID').value;
+    const familyIcon = document.getElementById('familyIcon').value;
+    const submitButton = document.getElementById('familySubmitButton');
+    
+    const isEditMode = oldFamilyName !== '';
+    const action = isEditMode ? 'editFamily' : 'addFamily';
+    
+    submitButton.disabled = true;
+    submitButton.textContent = isEditMode ? 'جاري الحفظ...' : 'جاري الإضافة...';
+
+    const payload = {
+        action: action,
+        familyName: familyNewName,
+        description: familyDescription,
+        icon: familyIcon,
+        sheetId: familySheetID
+    };
+    
+    if (isEditMode) {
+        payload.oldFamilyName = oldFamilyName;
+    }
+
+    try {
+        const response = await fetch(FAMILY_INDEX_WEB_APP_URL, {
+            method: 'POST',
+            mode: 'cors',
+            cache: 'no-cache',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(payload)
+        });
+
+        const result = await response.json();
+
+        if (result.success) {
+            alert(result.message);
+            closeFamilyModal();
+            loadFamiliesIndex(true); // إعادة تحميل القائمة في وضع المشرف
+        } else {
+            alert(`فشل العملية: ${result.message}`);
+        }
+
+    } catch (error) {
+        console.error('خطأ في الاتصال بالسكربت:', error);
+        alert('حدث خطأ في الاتصال بالخادم. تحقق من الرابط.');
+    } finally {
+        submitButton.disabled = false;
+        submitButton.textContent = isEditMode ? 'حفظ التعديلات' : 'إضافة';
+    }
+}
+
+// ============================================
+// 6. التحقق من حالة تسجيل الدخول
+// ============================================
+
 // تعريف دالة لفتح النافذة المنبثقة
 function openLoginModal() {
     document.getElementById('loginModal').style.display = 'flex';
@@ -938,7 +1134,7 @@ function showAdminPanel() {
 	}
 
 function showFamiliesAdmin() {
-    alert('صفحة إدارة العائلات قريباً...');
+    showAdminPanel(); // إعادة استخدام لوحة المشرف لعرض العائلات
 }
 
 // ============================================

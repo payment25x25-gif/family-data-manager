@@ -28,6 +28,9 @@ function doPost(e) {
     let result = { success: false };
     
     switch(action) {
+      case 'addFamily':
+        result = addFamily(data.familyName, data.description, data.icon, data.sheetId);
+        break;
       case 'updateCell':
         result = updateCell(data.row, data.col, data.value);
         break;
@@ -221,6 +224,34 @@ function updateYear(col, newYear) {
     return { success: true, message: 'تم تحديث السنة' };
   } catch(error) {
     Logger.log('خطأ في تحديث سنة: ' + error);
+    return { success: false, message: error.toString() };
+  }
+}
+
+// ============================================
+// إضافة عائلة جديدة (للفهرس)
+// ============================================
+function addFamily(familyName, description, icon, sheetId) {
+  try {
+    const sheet = SpreadsheetApp.getActiveSpreadsheet().getSheetByName("Families");
+    if (!sheet) {
+      return { success: false, message: "Sheet 'Families' not found." };
+    }
+
+    // التحقق من وجود العائلة مسبقاً
+    const data = sheet.getDataRange().getValues();
+    const exists = data.some(row => row[0] === familyName);
+    if (exists) {
+      return { success: false, message: "Family name already exists." };
+    }
+
+    // إضافة صف جديد
+    sheet.appendRow([familyName, description, icon, sheetId]);
+    SpreadsheetApp.flush();
+    
+    return { success: true, message: "Family added successfully." };
+  } catch(error) {
+    Logger.log('Error in addFamily: ' + error);
     return { success: false, message: error.toString() };
   }
 }
