@@ -35,46 +35,29 @@
             <section class="hero">
                 <div class="hero-content">
                     <h2>مدير بيانات العائلات</h2>
-                    <p>منصة متكاملة وعصرية لعرض وإدارة بيانات العائلات بسهولة وكفاءة عالية. نظام آمن ومحمي بأحدث تقنيات الحماية.</p>
+                   
                 </div>
             </section>
 
             <!-- Families Grid -->
             <section class="families-section">
-                <h3>
-                    <i class="fas fa-home"></i> العائلات المسجلة
-                </h3>
-                <div class="families-grid">
-                    <div class="family-card">
-                        <div class="family-card-icon">
-                            <i class="fas fa-users" style="color: white;"></i>
-                        </div>
-                        <h4>آل بن صالح</h4>
-                        <p>عرض بيانات عائلة آل مزهر والاطلاع على السجلات والمعلومات الكاملة</p>
-                        <button class="btn-primary" onclick="showFamily('آل مزهر')">
-                            <i class="fas fa-arrow-left"></i> عرض البيانات
-                        </button>
-                    </div>
-                    <div class="family-card">
-                        <div class="family-card-icon" style="background: linear-gradient(135deg, #10b981, #059669);">
-                            <i class="fas fa-users" style="color: white;"></i>
-                        </div>
-                        <h4>آل راشد</h4>
-                        <p>عرض بيانات عائلة آل راشد والاطلاع على السجلات والمعلومات الكاملة</p>
-                        <button class="btn-primary" onclick="showFamily('آل راشد')">
-                            <i class="fas fa-arrow-left"></i> عرض البيانات
+                <div class="families-header">
+                    <h3>
+                        <i class="fas fa-home"></i> العائلات المسجلة
+                    </h3>
+                    <!-- أدوات المشرفين لإدارة العائلات -->
+                    <div id="adminControls" class="admin-controls" style="display: none;">
+                        <button class="btn-primary" onclick="openAddFamilyModal()">
+                            <i class="fas fa-plus-circle"></i> إضافة عائلة
                         </button>
                     </div>
                 </div>
+                <div id="familiesGrid" class="families-grid">
+                    <!-- سيتم ملء البطاقات بواسطة JavaScript -->
+                </div>
             </section>
 
-            <!-- Info Section -->
-            <section class="info-section">
-                <h3>
-                    <i class="fas fa-info-circle"></i> عن المنصة
-                </h3>
-               
-            </section>
+            
         </div>
 
         <!-- Family Data Page -->
@@ -92,22 +75,54 @@
             </div>
         </div>
 
-        <!-- Admin Panel -->
-        <div id="adminPage" class="page">
-            <div class="container">
-                <div class="admin-header">
-                    <h2>
-                        <i class="fas fa-shield-alt"></i> لوحة الإدارة
-                    </h2>
-                    <button class="btn-logout" onclick="handleLogout()">
-                        <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
-                    </button>
-                </div>
-                <div class="admin-content">
-                    <!-- سيتم ملأها بـ JavaScript -->
-                </div>
-            </div>
-        </div>
+	    <!-- Admin Panel -->
+	    <div id="adminPage" class="page">
+	        <div class="container">
+	            <div class="admin-header">
+	                <h2>
+	                    <i class="fas fa-shield-alt"></i> لوحة الإدارة
+	                </h2>
+	                <button class="btn-logout" onclick="handleLogout()">
+	                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
+	                </button>
+	            </div>
+	            <div class="admin-content">
+	                <!-- سيتم ملأها بـ JavaScript -->
+	            </div>
+	        </div>
+	    </div>
+	    
+	    <!-- Modal لإضافة/تعديل عائلة -->
+	    <div id="familyModal" class="modal">
+	        <div class="modal-content">
+	            <span class="close-btn" onclick="closeFamilyModal()">&times;</span>
+	            <div class="modal-header">
+	                <h2 id="familyModalTitle">إضافة عائلة جديدة</h2>
+	            </div>
+	            <div class="modal-body">
+	                <form id="familyForm" onsubmit="handleFamilySubmit(event)">
+	                    <input type="hidden" id="familyOldName">
+	                    <div class="form-group">
+	                        <label for="familyNewName">اسم العائلة:</label>
+	                        <input type="text" id="familyNewName" required>
+	                    </div>
+	                    <div class="form-group">
+	                        <label for="familyDescription">الوصف:</label>
+	                        <input type="text" id="familyDescription">
+	                    </div>
+	                    <div class="form-group">
+	                        <label for="familySheetID">معرف Google Sheet (SheetID):</label>
+	                        <input type="text" id="familySheetID" placeholder="مثال: 1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc">
+	                    </div>
+	                    <div class="form-group">
+	                        <label for="familyIcon">أيقونة (اختياري):</label>
+	                        <input type="text" id="familyIcon" placeholder="مثال: fas fa-home">
+	                    </div>
+	                    <button type="submit" class="btn-primary" id="familySubmitButton">إضافة</button>
+	                </form>
+	            </div>
+	        </div>
+	    </div>
     </main>
 
     <!-- Footer -->
@@ -153,7 +168,11 @@
                     <button type="submit" class="btn-login">
                         <i class="fas fa-sign-in-alt"></i> دخول
                     </button>
-                
+                    <div class="link">
+                        <p><strong>بيانات الاختبار:</strong></p>
+                        <p>اسم المستخدم: <code>admin</code></p>
+                        <p>كلمة المرور: <code>admin123</code></p>
+                    </div>
                 </form>
             </div>
         </div>
