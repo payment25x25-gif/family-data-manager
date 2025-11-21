@@ -44,6 +44,9 @@ function doPost(e) {
       case 'editFamily':
         result = editFamily(data);
         break;
+      case 'deleteFamily':
+        result = deleteFamily(data);
+        break;
       // يمكنك إضافة حالات أخرى هنا لمعالجة تحديثات البيانات الفردية (updateCell, addPerson, etc.)
       default:
         result = { success: false, message: 'Unknown action' };
@@ -139,6 +142,90 @@ function addFamily(data) {
 
 // ============================================
 // 3. تعديل بيانات عائلة في الفهرس
+// ============================================
+function editFamily(data) {
+  try {
+    const ss = SpreadsheetApp.openById(FAMILY_INDEX_SHEET_ID);
+    const sheet = ss.getSheetByName(FAMILY_INDEX_SHEET_NAME);
+    
+    if (!sheet) {
+      return { success: false, message: "Sheet 'FamiliesIndex' not found." };
+    }
+
+    const oldFamilyName = data.oldFamilyName;
+    const newFamilyName = data.familyName;
+    const description = data.description || '';
+    const sheetId = data.sheetId || '';
+    const icon = data.icon || 'fas fa-users';
+    
+    const values = sheet.getDataRange().getValues();
+    let rowToUpdate = -1;
+
+    // البحث عن الصف الذي يحتوي على اسم العائلة القديم
+    for (let i = 1; i < values.length; i++) {
+      if (values[i][0] === oldFamilyName) {
+        rowToUpdate = i + 1; // رقم الصف في الجدول
+        break;
+      }
+    }
+
+    if (rowToUpdate === -1) {
+      return { success: false, message: `Family '${oldFamilyName}' not found.` };
+    }
+
+    // تحديث البيانات في الصف
+    sheet.getRange(rowToUpdate, 1, 1, 4).setValues([[newFamilyName, description, sheetId, icon]]);
+    SpreadsheetApp.flush();
+    
+    return { success: true, message: `تم تعديل بيانات عائلة ${newFamilyName} بنجاح.` };
+  } catch(error) {
+    Logger.log('Error in editFamily: ' + error);
+    return { success: false, message: 'فشل تعديل العائلة: ' + error.toString() };
+  }
+}
+
+// ============================================
+// 4. حذف عائلة من الفهرس
+// ============================================
+function deleteFamily(data) {
+  try {
+    const ss = SpreadsheetApp.openById(FAMILY_INDEX_SHEET_ID);
+    const sheet = ss.getSheetByName(FAMILY_INDEX_SHEET_NAME);
+    
+    if (!sheet) {
+      return { success: false, message: "Sheet 'FamiliesIndex' not found." };
+    }
+
+    const familyName = data.familyName;
+    
+    const values = sheet.getDataRange().getValues();
+    let rowToDelete = -1;
+
+    // البحث عن الصف الذي يحتوي على اسم العائلة
+    for (let i = 1; i < values.length; i++) {
+      if (values[i][0] === familyName) {
+        rowToDelete = i + 1; // رقم الصف في الجدول
+        break;
+      }
+    }
+
+    if (rowToDelete === -1) {
+      return { success: false, message: `Family '${familyName}' not found.` };
+    }
+
+    // حذف الصف
+    sheet.deleteRow(rowToDelete);
+    SpreadsheetApp.flush();
+    
+    return { success: true, message: `تم حذف عائلة ${familyName} بنجاح.` };
+  } catch(error) {
+    Logger.log('Error in deleteFamily: ' + error);
+    return { success: false, message: 'فشل حذف العائلة: ' + error.toString() };
+  }
+}
+
+// ============================================
+// 5. جلب بيانات عائلة محددة (لصفحة العائلة)
 // ============================================
 function editFamily(data) {
   try {

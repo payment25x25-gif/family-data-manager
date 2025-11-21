@@ -95,9 +95,19 @@
 	                    <i class="fas fa-sign-out-alt"></i> تسجيل الخروج
 	                </button>
 	            </div>
-	            <div class="admin-content">
-	                <!-- سيتم ملأها بـ JavaScript -->
-	            </div>
+		            <div class="admin-content">
+		                <div class="admin-actions-bar">
+		                    <button class="btn-primary" onclick="openFamilyModal('add')">
+		                        <i class="fas fa-plus-circle"></i> إضافة عائلة جديدة
+		                    </button>
+		                    <button class="btn-danger" onclick="openDeleteFamilyModal()">
+		                        <i class="fas fa-trash-alt"></i> حذف عائلة
+		                    </button>
+		                </div>
+		                <div id="adminFamiliesGrid" class="families-grid">
+		                    <!-- سيتم ملء البطاقات بواسطة JavaScript -->
+		                </div>
+		            </div>
 	        </div>
 	    </div>
 	    
