@@ -919,49 +919,23 @@ function handleLogout() {
 }
 
 function showAdminPanel() {
-  function showAdminPanel() {
-    showPage('adminPage');
-    document.getElementById('adminNav').style.display = 'block';
-    
-    const username = localStorage.getItem('username') || 'المشرف';
-    const adminContent = document.querySelector('#adminPage .admin-content');
-    adminContent.innerHTML = `
-        <p style="font-size: 1.2rem; font-weight: 600;">مرحباً بك يا ${username}! 👋</p>
-        <p>أنت الآن في منطقة الإدارة. يمكنك التحكم الكامل في بيانات العائلات.</p>
-        <p style="margin-top: 20px;">اختر العائلة التي تريد تعديل بياناتها:</p>
-        <div class="families-grid" id="adminFamiliesGrid">
-            <!-- سيتم ملء البطاقات هنا بواسطة JavaScript -->
-        </div>
-    `;
-    
-    // استدعاء دالة تحميل فهرس العائلات عند فتح لوحة المشرف
-    loadFamiliesIndex();
-};
-    
-    const familiesGrid = document.getElementById('adminFamiliesGrid');
-    const familyNames = Object.keys(familiesData);
-    
-    familyNames.forEach(familyName => {
-        // تحديد لون عشوائي للبطاقة
-        const colors = ['#6366f1', '#10b981', '#f59e0b', '#ef4444', '#8b5cf6'];
-        const randomColor = colors[Math.floor(Math.random() * colors.length)];
-        
-        const card = document.createElement('div');
-        card.className = 'family-card';
-        card.style.background = `linear-gradient(135deg, ${randomColor}, #1e293b)`;
-        card.innerHTML = `
-            <div class="family-card-icon" style="background: ${randomColor};">
-                <i class="fas fa-users" style="color: white;"></i>
-            </div>
-            <h4>${familyName}</h4>
-            <p>إدارة وتعديل بيانات عائلة ${familyName}</p>
-            <button class="btn-primary" onclick="showFamily('${familyName}', true)">
-                <i class="fas fa-cogs"></i> تحكم كامل
-            </button>
-        `;
-        familiesGrid.appendChild(card);
-    });
-}
+	    showPage('adminPage');
+	    document.getElementById('adminNav').style.display = 'block';
+	    
+	    const username = localStorage.getItem('username') || 'المشرف';
+	    const adminContent = document.querySelector('#adminPage .admin-content');
+	    adminContent.innerHTML = `
+	        <p style="font-size: 1.2rem; font-weight: 600;">مرحباً بك يا ${username}! 👋</p>
+	        <p>أنت الآن في منطقة الإدارة. يمكنك التحكم الكامل في بيانات العائلات.</p>
+	        <p style="margin-top: 20px;">اختر العائلة التي تريد تعديل بياناتها:</p>
+	        <div class="families-grid" id="adminFamiliesGrid">
+	            <!-- سيتم ملء البطاقات هنا بواسطة JavaScript -->
+	        </div>
+	    `;
+	    
+	    // استدعاء دالة تحميل فهرس العائلات عند فتح لوحة المشرف
+	    loadFamiliesIndex();
+	}
 
 function showFamiliesAdmin() {
     alert('صفحة إدارة العائلات قريباً...');
