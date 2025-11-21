@@ -107,7 +107,7 @@ function getFamilies() {
 }
 
 // ============================================
-// 2. إضافة عائلة جديدة للفهرس
+// 2. إضافة عائلة جديدة للفهرس وإنشاء جدول بيانات خاص بها
 // ============================================
 function addFamily(data) {
   try {
@@ -120,7 +120,7 @@ function addFamily(data) {
 
     const familyName = data.familyName;
     const description = data.description || '';
-    const sheetId = data.sheetId || '';
+    let sheetId = data.sheetId || ''; // في حالة الإضافة، لا يوجد sheetId، سنقوم بإنشائه
     const icon = data.icon || 'fas fa-users';
     
     // التحقق من وجود العائلة مسبقاً
@@ -129,11 +129,23 @@ function addFamily(data) {
       return { success: false, message: "Family name already exists." };
     }
 
-    // إضافة صف جديد
+    // 1. إنشاء جدول بيانات جديد للعائلة
+    const newSpreadsheet = SpreadsheetApp.create(`بيانات عائلة ${familyName}`);
+    sheetId = newSpreadsheet.getId();
+    
+    // 2. إعداد الهيكل الأساسي لجدول البيانات الجديد
+    const newSheet = newSpreadsheet.getSheets()[0];
+    newSheet.setName('البيانات');
+    
+    // إضافة صف الرؤوس (يفترض أن الصف الأول هو لسنوات البيانات)
+    // يمكنك تعديل هذا حسب الهيكل الفعلي لبيانات العائلة
+    newSheet.appendRow(['الاسم', '2020', '2021', '2022', '2023', '2024']);
+    
+    // 3. إضافة صف جديد في فهرس العائلات مع SheetID الجديد
     sheet.appendRow([familyName, description, sheetId, icon]);
     SpreadsheetApp.flush();
     
-    return { success: true, message: `تم إضافة عائلة ${familyName} بنجاح.` };
+    return { success: true, message: `تم إضافة عائلة ${familyName} بنجاح وإنشاء جدول بيانات خاص بها بالمعرف: ${sheetId}` };
   } catch(error) {
     Logger.log('Error in addFamily: ' + error);
     return { success: false, message: 'فشل إضافة العائلة: ' + error.toString() };
@@ -226,50 +238,6 @@ function deleteFamily(data) {
 
 // ============================================
 // 5. جلب بيانات عائلة محددة (لصفحة العائلة)
-// ============================================
-function editFamily(data) {
-  try {
-    const ss = SpreadsheetApp.openById(FAMILY_INDEX_SHEET_ID);
-    const sheet = ss.getSheetByName(FAMILY_INDEX_SHEET_NAME);
-    
-    if (!sheet) {
-      return { success: false, message: "Sheet 'FamiliesIndex' not found." };
-    }
-
-    const oldFamilyName = data.oldFamilyName;
-    const newFamilyName = data.familyName;
-    const description = data.description || '';
-    const sheetId = data.sheetId || '';
-    const icon = data.icon || 'fas fa-users';
-    
-    const values = sheet.getDataRange().getValues();
-    let rowToUpdate = -1;
-
-    // البحث عن الصف الذي يحتوي على اسم العائلة القديم
-    for (let i = 1; i < values.length; i++) {
-      if (values[i][0] === oldFamilyName) {
-        rowToUpdate = i + 1; // رقم الصف في الجدول
-        break;
-      }
-    }
-
-    if (rowToUpdate === -1) {
-      return { success: false, message: `Family '${oldFamilyName}' not found.` };
-    }
-
-    // تحديث البيانات في الصف
-    sheet.getRange(rowToUpdate, 1, 1, 4).setValues([[newFamilyName, description, sheetId, icon]]);
-    SpreadsheetApp.flush();
-    
-    return { success: true, message: `تم تعديل بيانات عائلة ${newFamilyName} بنجاح.` };
-  } catch(error) {
-    Logger.log('Error in editFamily: ' + error);
-    return { success: false, message: 'فشل تعديل العائلة: ' + error.toString() };
-  }
-}
-
-// ============================================
-// 4. جلب بيانات عائلة محددة (لصفحة العائلة)
 // ============================================
 function getData(sheetId) {
   try {
