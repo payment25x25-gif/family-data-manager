@@ -262,9 +262,9 @@ async function handleFamilySubmit(event) {
 
     const familyData = {
         action: mode === 'edit' ? 'editFamily' : 'addFamily',
-        familyName: document.getElementById('familyName').value,
+        familyName: document.getElementById('familyNewName').value,
         description: document.getElementById('familyDescription').value,
-        sheetId: document.getElementById('familySheetId').value,
+        sheetId: document.getElementById('familySheetID').value,
         icon: document.getElementById('familyIcon').value,
         oldFamilyName: oldFamilyName
     };
