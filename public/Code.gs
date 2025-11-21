@@ -95,12 +95,14 @@ function getFamilies() {
       return { success: false, error: "Sheet 'FamiliesIndex' not found in the main spreadsheet." };
     }
     
-    const range = sheet.getDataRange();
-    const values = range.getValues();
+    const lastRow = sheet.getLastRow();
+    const lastColumn = sheet.getLastColumn();
     
-    if (values.length < 2) {
+    if (lastRow < 2) {
       return { success: true, families: {} }; // لا توجد بيانات عائلات (باستثناء الصف الأول)
     }
+    
+    const values = sheet.getRange(1, 1, lastRow, lastColumn).getValues();
     
     const headers = values[0]; // FamilyName, Description, SheetID, Icon
     const families = {};
