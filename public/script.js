@@ -135,16 +135,17 @@ function closeLoginModal() {
 }
 
 async function handleLogin(event) {
-    event.preventDefault();
-    const password = document.getElementById('password').value;
-    const errorDiv = document.getElementById('loginError');
-
-    try {
-        const response = await fetch('/api/auth', {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ password })
-        });
+	    event.preventDefault();
+	    const username = document.getElementById('username').value;
+	    const password = document.getElementById('password').value;
+	    const errorDiv = document.getElementById('loginError');
+	
+	    try {
+	        const response = await fetch('/api/auth', {
+	            method: 'POST',
+	            headers: { 'Content-Type': 'application/json' },
+	            body: JSON.stringify({ username, password })
+	        });
 
         const result = await response.json();
 
