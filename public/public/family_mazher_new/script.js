@@ -7,8 +7,8 @@ let editingCell = { row: null, col: null };
 let editingName = { row: null };
 let editingYear = { col: null };
 
-const SHEET_ID = "1FleMs__EEeGaAxgdj7G2mPVFGa619F4kdf_o1jKlJIc";
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYrKD_o_QNgeaM36P78HbBDfPtqyAD-UX066lcKaVIP6paNvjhYDg/exec";
+const SHEET_ID = "12kdh41FzmZAS-8fgTm5LyqpwlCMWVg-jG9KcJiirLxA";
+const WEB_APP_URL = "https://script.google.com/macros/s/AKfycbw8pgbJnIaNbbmNFxQK4C2cqFYuTLYOhH56lNzOsaQ2QdgddGMoeS2SUszRcCpk9wl1/exec";
 
 // ============================================
 // تحميل البيانات عند بدء الصفحة

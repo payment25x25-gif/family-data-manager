@@ -9,7 +9,7 @@ let editingYear = { col: null };
 
 let SHEET_ID = ""; // سيتم تعيينه من URL
 let FAMILY_NAME = ""; // سيتم تعيينه من URL
-const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYrKD_o_QNgeaM36P78HbBDfPtqyAD-UX066lcKaVIP6paNvjhYDg/exec"; // يجب أن يكون هذا هو رابط Web App الخاص بـ Code.gs
+const WEB_APP_URL = "YOUR_WEB_APP_URL_HERE"; // يجب استبدال هذا برابط Web App الجديد بعد نشر Code.gs
 
 // ============================================
 // دوال مساعدة
