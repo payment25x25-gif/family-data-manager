@@ -10,21 +10,7 @@ const FAMILY_INDEX_SHEET_NAME = "Sheet1";
 // دالة Web App الرئيسية (GET)
 // ============================================
 function doGet(e) {
-  const action = e.parameter.action;
-  
-  if (action === 'getFamilies') {
-    return ContentService.createTextOutput(JSON.stringify(getFamilies()))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  // إذا كان الطلب لجلب بيانات عائلة محددة (مثل آل مزهر)
-  if (action === 'getData' && e.parameter.sheetName) {
-    return ContentService.createTextOutput(JSON.stringify(getData(e.parameter.sheetName)))
-      .setMimeType(ContentService.MimeType.JSON);
-  }
-  
-  return ContentService.createTextOutput(JSON.stringify({ success: false, error: 'Invalid or missing action parameter.' }))
-    .setMimeType(ContentService.MimeType.JSON);
+  return HtmlService.createTemplateFromFile('index').evaluate();
 }
 
 // ============================================
