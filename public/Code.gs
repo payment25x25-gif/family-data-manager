@@ -129,13 +129,17 @@ function addFamily(data) {
       return { success: false, message: "Family name already exists." };
     }
 
-    // 1. إنشاء جدول بيانات جديد للعائلة
-    const newSpreadsheet = SpreadsheetApp.create(`بيانات عائلة ${familyName}`);
-    sheetId = newSpreadsheet.getId();
-    
-// 2. إعداد الهيكل الأساسي لجدول البيانات الجديد
-	    const newSheet = newSpreadsheet.getSheets()[0];
-	    newSheet.setName('البيانات');
+// 1. إنشاء ورقة عمل جديدة داخل ملف الفهرس الرئيسي
+	    const newSheetName = familyName; // استخدام اسم العائلة كاسم للورقة
+	    
+	    // التحقق من وجود ورقة عمل بنفس الاسم
+	    if (ss.getSheetByName(newSheetName)) {
+	      return { success: false, message: `Sheet with name '${newSheetName}' already exists.` };
+	    }
+	    
+	    const newSheet = ss.insertSheet(newSheetName);
+	    
+	    // 2. إعداد الهيكل الأساسي لورقة العمل الجديدة
 	    
 	    // إعداد الرؤوس: الاسم، ثم أزواج (السنة - الحالة، السنة - الملاحظة)
 	    const headers = ['الاسم', '2023', '2023', '2024', '2024'];
@@ -148,11 +152,9 @@ function addFamily(data) {
 	    headerRange.setFontWeight("bold");
 	    headerRange.setHorizontalAlignment("center");
 	    
-	    // حذف ورقة العمل الافتراضية الإضافية إذا وجدت (عادةً لا توجد عند الإنشاء)
-	    // لا حاجة لحذفها، فقط نستخدم الأولى.
-    
-    // 3. إضافة صف جديد في فهرس العائلات مع SheetID الجديد
-    sheet.appendRow([familyName, description, sheetId, icon]);
+	    // 3. إضافة صف جديد في فهرس العائلات مع اسم الورقة الجديدة
+	    // ملاحظة: العمود الثالث في الفهرس سيحتوي الآن على اسم الورقة (Sheet Name) بدلاً من Sheet ID
+	    sheet.appendRow([familyName, description, newSheetName, icon]);
     SpreadsheetApp.flush();
     
     return { success: true, message: `تم إضافة عائلة ${familyName} بنجاح وإنشاء جدول بيانات خاص بها بالمعرف: ${sheetId}` };

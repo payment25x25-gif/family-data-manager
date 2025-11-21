@@ -49,7 +49,7 @@ function showFamily(familyName) {
     }
 
     // التوجيه إلى صفحة العائلة مع تمرير SheetID واسم العائلة في URL
-    const url = `family_mazher_new/index.html?sheetId=${familyData.SheetID}&familyName=${encodeURIComponent(familyName)}`;
+    const url = `family_mazher_new/index.html?sheetName=${familyData.SheetID}&familyName=${encodeURIComponent(familyName)}`;
     window.location.href = url;
 }
 

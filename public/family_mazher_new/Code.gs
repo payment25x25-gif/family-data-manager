@@ -10,10 +10,10 @@
 // ============================================
 function doGet(e) {
   const action = e.parameter.action;
-  const sheetId = e.parameter.sheetId;
+  const sheetName = e.parameter.sheetName;
   
-  if (action === 'getData' && sheetId) {
-    return ContentService.createTextOutput(JSON.stringify(getData(sheetId)))
+  if (action === 'getData' && sheetName) {
+    return ContentService.createTextOutput(JSON.stringify(getData(sheetName)))
       .setMimeType(ContentService.MimeType.JSON);
   }
   
@@ -28,10 +28,10 @@ function doPost(e) {
   try {
     const data = JSON.parse(e.postData.contents);
     const action = data.action;
-    const sheetId = data.sheetId;
+    const sheetName = data.sheetName;
     
-    if (!sheetId) {
-        return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Missing Sheet ID' }))
+    if (!sheetName) {
+        return ContentService.createTextOutput(JSON.stringify({ success: false, message: 'Missing Sheet Name' }))
             .setMimeType(ContentService.MimeType.JSON);
     }
     
@@ -39,25 +39,25 @@ function doPost(e) {
     
     switch(action) {
       case 'updateCell':
-        result = updateCell(sheetId, data.rowIndex, data.statusColIndex, data.status, data.noteColIndex, data.note);
+        result = updateCell(sheetName, data.rowIndex, data.statusColIndex, data.status, data.noteColIndex, data.note);
         break;
       case 'addPerson':
-        result = addPerson(sheetId, data.personName);
+        result = addPerson(sheetName, data.personName);
         break;
       case 'deletePerson':
-        result = deletePerson(sheetId, data.rowIndex);
+        result = deletePerson(sheetName, data.rowIndex);
         break;
       case 'updateName':
-        result = updateName(sheetId, data.rowIndex, data.newName);
+        result = updateName(sheetName, data.rowIndex, data.newName);
         break;
       case 'addYear':
-        result = addYear(sheetId, data.year);
+        result = addYear(sheetName, data.year);
         break;
       case 'deleteYear':
-        result = deleteYear(sheetId, data.yearIndex);
+        result = deleteYear(sheetName, data.yearIndex);
         break;
       case 'updateYear':
-        result = updateYear(sheetId, data.yearIndex, data.newYear);
+        result = updateYear(sheetName, data.yearIndex, data.newYear);
         break;
       default:
         result = { success: false, message: 'Unknown action' };
@@ -76,9 +76,14 @@ function doPost(e) {
 // ============================================
 // 1. الحصول على البيانات (مع دعم الحالة والملاحظة)
 // ============================================
-function getData(sheetId) {
+function getData(sheetName) {
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getSheets()[0]; // يفترض أن البيانات في أول شيت
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
+    
+    if (!sheet) {
+        return { success: false, error: `Sheet '${sheetName}' not found.` };
+    }
     const range = sheet.getDataRange();
     const values = range.getValues();
     
@@ -122,9 +127,10 @@ function getData(sheetId) {
 // ============================================
 // 2. تحديث خانة (الحالة والملاحظة)
 // ============================================
-function updateCell(sheetId, rowIndex, statusColIndex, status, noteColIndex, note) {
+function updateCell(sheetName, rowIndex, statusColIndex, status, noteColIndex, note) {
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getSheets()[0];
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
     
     // rowIndex هو رقم الصف في مصفوفة البيانات (0-indexed)، نضيف 1 لتعويض صف الرؤوس
     const actualRow = rowIndex + 2; 
@@ -147,9 +153,10 @@ function updateCell(sheetId, rowIndex, statusColIndex, status, noteColIndex, not
 // ============================================
 // 3. إضافة شخص جديد
 // ============================================
-function addPerson(sheetId, personName) {
+function addPerson(sheetName, personName) {
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getSheets()[0];
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
     const lastRow = sheet.getLastRow();
     const lastCol = sheet.getLastColumn();
     
@@ -174,9 +181,10 @@ function addPerson(sheetId, personName) {
 // ============================================
 // 4. حذف شخص
 // ============================================
-function deletePerson(sheetId, rowIndex) {
+function deletePerson(sheetName, rowIndex) {
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getSheets()[0];
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
     const actualRow = rowIndex + 2; // +2 لتعويض صف الرؤوس و 0-indexed
     
     sheet.deleteRow(actualRow);
@@ -192,9 +200,10 @@ function deletePerson(sheetId, rowIndex) {
 // ============================================
 // 5. تحديث اسم شخص
 // ============================================
-function updateName(sheetId, rowIndex, newName) {
+function updateName(sheetName, rowIndex, newName) {
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getSheets()[0];
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
     const actualRow = rowIndex + 2; // +2 لتعويض صف الرؤوس و 0-indexed
     
     sheet.getRange(actualRow, 1).setValue(newName);
@@ -210,9 +219,10 @@ function updateName(sheetId, rowIndex, newName) {
 // ============================================
 // 6. إضافة سنة جديدة
 // ============================================
-function addYear(sheetId, year) {
+function addYear(sheetName, year) {
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getSheets()[0];
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
     const lastCol = sheet.getLastColumn();
     const lastRow = sheet.getLastRow();
     
@@ -238,9 +248,10 @@ function addYear(sheetId, year) {
 // ============================================
 // 7. حذف سنة
 // ============================================
-function deleteYear(sheetId, yearIndex) {
+function deleteYear(sheetName, yearIndex) {
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getSheets()[0];
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
     // yearIndex هو رقم السنة (0-indexed)، كل سنة تبدأ من العمود 2 (1-indexed) وتغطي عمودين
     const actualCol = (yearIndex * 2) + 2; 
     
@@ -258,9 +269,10 @@ function deleteYear(sheetId, yearIndex) {
 // ============================================
 // 8. تحديث السنة
 // ============================================
-function updateYear(sheetId, yearIndex, newYear) {
+function updateYear(sheetName, yearIndex, newYear) {
   try {
-    const sheet = SpreadsheetApp.openById(sheetId).getSheets()[0];
+    const ss = SpreadsheetApp.getActiveSpreadsheet();
+    const sheet = ss.getSheetByName(sheetName);
     // yearIndex هو رقم السنة (0-indexed)، كل سنة تبدأ من العمود 2 (1-indexed)
     const actualCol = (yearIndex * 2) + 2; 
     
@@ -278,30 +290,4 @@ function updateYear(sheetId, yearIndex, newYear) {
 }
 
 // ============================================
-// دالة مساعدة لتهيئة جدول بيانات جديد
-// ============================================
-function initializeNewFamilySheet(sheetId, familyName) {
-  try {
-    const ss = SpreadsheetApp.openById(sheetId);
-    const sheet = ss.getSheets()[0];
-    sheet.setName('البيانات');
-    
-    // إعداد الرؤوس: الاسم، ثم أزواج (السنة - الحالة، السنة - الملاحظة)
-    const headers = ['الاسم', '2023', '2023', '2024', '2024'];
-    sheet.getRange(1, 1, 1, headers.length).setValues([headers]);
-    
-    // تنسيق الصف الأول
-    const headerRange = sheet.getRange(1, 1, 1, headers.length);
-    headerRange.setBackground("#4472C4");
-    headerRange.setFontColor("#FFFFFF");
-    headerRange.setFontWeight("bold");
-    headerRange.setHorizontalAlignment("center");
-    
-    SpreadsheetApp.flush();
-    
-    return { success: true, message: 'تم تهيئة جدول البيانات بنجاح' };
-  } catch(error) {
-    Logger.log('خطأ في initializeNewFamilySheet: ' + error);
-    return { success: false, message: error.toString() };
-  }
-}
+// تم إزالة دالة initializeNewFamilySheet لأن التهيئة تتم الآن في Code.gs الرئيسي

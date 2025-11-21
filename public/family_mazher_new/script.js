@@ -17,7 +17,7 @@ const WEB_APP_URL = "https://script.google.com/macros/s/AKfycby5T2udlC21ihzcAyYr
 
 function getUrlParams() {
     const params = new URLSearchParams(window.location.search);
-    SHEET_ID = params.get('sheetId') || "";
+    SHEET_ID = params.get('sheetName') || "";
     FAMILY_NAME = decodeURIComponent(params.get('familyName') || "بيانات العائلة");
 }
 
@@ -31,7 +31,7 @@ function goBackToHome() {
 document.addEventListener('DOMContentLoaded', function() {
     getUrlParams();
     if (!SHEET_ID) {
-        alert('خطأ: لم يتم تحديد معرف جدول البيانات (Sheet ID). سيتم توجيهك للصفحة الرئيسية.');
+        alert('خطأ: لم يتم تحديد اسم ورقة العمل (Sheet Name). سيتم توجيهك للصفحة الرئيسية.');
         goBackToHome();
         return;
     }
@@ -68,7 +68,7 @@ function checkAdminStatus() {
 function loadData() {
     showNotification('جاري تحميل البيانات...', 'info');
     
-    fetch(`${WEB_APP_URL}?action=getData&sheetId=${SHEET_ID}`)
+    fetch(`${WEB_APP_URL}?action=getData&sheetName=${SHEET_ID}`)
         .then(response => response.json())
         .then(data => {
             if (data.success) {
@@ -505,7 +505,7 @@ function showNotification(message, type = 'info', duration = 3000) {
 async function updateCell(rowIndex, statusColIndex, status, noteColIndex, note) {
     const data = {
         action: 'updateCell',
-        sheetId: SHEET_ID,
+        sheetName: SHEET_ID,
         rowIndex: rowIndex + 1, // +1 لتعويض صف الرؤوس
         statusColIndex: statusColIndex + 1, // +1 لتعويض عمود الاسم
         status: status,
@@ -529,7 +529,7 @@ async function updateCell(rowIndex, statusColIndex, status, noteColIndex, note) 
 async function addPerson(personName) {
     const data = {
         action: 'addPerson',
-        sheetId: SHEET_ID,
+        sheetName: SHEET_ID,
         personName: personName
     };
     
@@ -549,7 +549,7 @@ async function addPerson(personName) {
 async function deletePerson(rowIndex) {
     const data = {
         action: 'deletePerson',
-        sheetId: SHEET_ID,
+        sheetName: SHEET_ID,
         rowIndex: rowIndex + 1 // +1 لتعويض صف الرؤوس
     };
     
@@ -569,7 +569,7 @@ async function deletePerson(rowIndex) {
 async function updateName(rowIndex, newName) {
     const data = {
         action: 'updateName',
-        sheetId: SHEET_ID,
+        sheetName: SHEET_ID,
         rowIndex: rowIndex + 1, // +1 لتعويض صف الرؤوس
         newName: newName
     };
@@ -590,7 +590,7 @@ async function updateName(rowIndex, newName) {
 async function addYear(year) {
     const data = {
         action: 'addYear',
-        sheetId: SHEET_ID,
+        sheetName: SHEET_ID,
         year: year
     };
     
@@ -610,7 +610,7 @@ async function addYear(year) {
 async function updateYear(yearIndex, newYear) {
     const data = {
         action: 'updateYear',
-        sheetId: SHEET_ID,
+        sheetName: SHEET_ID,
         yearIndex: yearIndex + 1, // +1 لتعويض عمود الاسم
         newYear: newYear
     };
@@ -631,7 +631,7 @@ async function updateYear(yearIndex, newYear) {
 async function deleteYear(yearIndex) {
     const data = {
         action: 'deleteYear',
-        sheetId: SHEET_ID,
+        sheetName: SHEET_ID,
         yearIndex: yearIndex + 1 // +1 لتعويض عمود الاسم
     };
     
